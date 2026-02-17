@@ -15,7 +15,7 @@
           :items="[
             { label: 'Tableau de bord', icon: 'i-lucide-layout-dashboard', to: '/' },
             { label: 'Utilisateurs', icon: 'i-lucide-users', to: '/users' },
-            { label: 'Personnel', icon: 'i-lucide-contact-2', to: '#' },
+            { label: 'Personnel', icon: 'i-lucide-contact-2', to: '/staff' },
           ]"
           class="font-sans"
         />
@@ -24,9 +24,9 @@
         <UNavigationMenu
           orientation="vertical"
           :items="[
-            { label: 'Articles', icon: 'i-lucide-package', to: '#' },
-            { label: 'Commandes', icon: 'i-lucide-shopping-bag', to: '#' },
-            { label: 'Codes Promo', icon: 'i-lucide-ticket', to: '#' },
+            { label: 'Articles', icon: 'i-lucide-package', to: '/shop/articles' },
+            { label: 'Commandes', icon: 'i-lucide-shopping-bag', to: '/shop/orders' },
+            { label: 'Codes Promo', icon: 'i-lucide-ticket', to: '/shop/promos' },
           ]"
         />
 
@@ -34,9 +34,9 @@
         <UNavigationMenu
           orientation="vertical"
           :items="[
-            { label: 'Services', icon: 'i-lucide-scissors', to: '#' },
-            { label: 'Réservations', icon: 'i-lucide-calendar', to: '#' },
-            { label: 'Calendrier', icon: 'i-lucide-calendar-days', to: '#' },
+            { label: 'Services', icon: 'i-lucide-scissors', to: '/reservations/services' },
+            { label: 'Réservations', icon: 'i-lucide-calendar', to: '/reservations' },
+            { label: 'Calendrier', icon: 'i-lucide-calendar-days', to: '/reservations/calendar' },
           ]"
         />
       </nav>

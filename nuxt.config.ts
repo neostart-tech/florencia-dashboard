@@ -17,6 +17,12 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  runtimeConfig: {
+    public: {
+      apiBase: 'http://127.0.0.1:8000/api'
+    }
+  },
+
   eslint: {
     config: {
       stylistic: {

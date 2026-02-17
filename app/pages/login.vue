@@ -6,14 +6,45 @@ definePageMeta({
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
+const toast = useToast()
 
 const handleLogin = async () => {
+  if (!email.value || !password.value) return
+
   loading.value = true
-  // Mock login for now
-  setTimeout(() => {
+  try {
+    const config = useRuntimeConfig()
+    const response = await $fetch<any>(`${config.public.apiBase}/admin/login`, {
+      method: 'POST',
+      body: {
+        email: email.value,
+        password: password.value
+      }
+    })
+
+    if (response.token) {
+      // Stockage du token et des infos utilisateur
+      localStorage.setItem('florencia_admin_token', response.token)
+      localStorage.setItem('florencia_admin_user', JSON.stringify(response.user))
+      
+      toast.add({
+        title: 'Connexion réussie',
+        description: `Bienvenue, ${response.user.name}`,
+        color: 'green'
+      })
+
+      navigateTo('/')
+    }
+  } catch (error: any) {
+    console.error('Login error:', error)
+    toast.add({
+      title: 'Échec de l\'authentification',
+      description: error.data?.message || 'Identifiants invalides ou erreur serveur',
+      color: 'red'
+    })
+  } finally {
     loading.value = false
-    navigateTo('/')
-  }, 1000)
+  }
 }
 </script>
 

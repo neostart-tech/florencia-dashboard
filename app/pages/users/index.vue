@@ -1,71 +1,57 @@
 <script setup lang="ts">
-const columns = [{
-  key: 'user',
-  label: 'Utilisateur'
-}, {
-  key: 'role',
-  label: 'Rôle'
-}, {
-  key: 'status',
-  label: 'Statut'
-}, {
-  key: 'created_at',
-  label: 'Date d\'inscription'
-}, {
-  key: 'actions',
-  label: ''
-}]
-
-const roles = {
-  admin: { label: 'Administrateur', color: 'cafe' },
-  personnel: { label: 'Personnel', color: 'blue' },
-  client: { label: 'Client', color: 'green' }
+interface User {
+  id: string
+  nom: string
+  email: string
+  tel: string
+  role?: { role: string }
 }
 
-const users = ref([
-  {
-    id: 1,
-    name: 'Marie Florencia',
-    email: 'marie@florencia.com',
-    role: 'admin',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/150?u=1',
-    created_at: '2024-01-15'
-  },
-  {
-    id: 2,
-    name: 'Jean Dupont',
-    email: 'jean.d@gmail.com',
-    role: 'personnel',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/150?u=2',
-    created_at: '2024-02-10'
-  },
-  {
-    id: 3,
-    name: 'Sophie Martin',
-    email: 'sophie.m@outlook.com',
-    role: 'client',
-    status: 'inactive',
-    avatar: 'https://i.pravatar.cc/150?u=3',
-    created_at: '2024-02-12'
+const config = useRuntimeConfig()
+const token = typeof window !== 'undefined' ? localStorage.getItem('florencia_admin_token') : null
+
+const { data: usersResponse, refresh } = await useFetch<any>(`${config.public.apiBase}/admins`, {
+  headers: {
+    Authorization: `Bearer ${token}`
   }
-])
+})
+
+const users = computed(() => usersResponse.value?.data || [])
 
 const search = ref('')
 const selectedRole = ref('all')
 const isModalOpen = ref(false)
 
 const filteredUsers = computed(() => {
-  return users.value.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(search.value.toLowerCase()) || 
+  return users.value.filter((user: User) => {
+    const matchesSearch = user.nom.toLowerCase().includes(search.value.toLowerCase()) || 
                          user.email.toLowerCase().includes(search.value.toLowerCase())
-    const matchesRole = selectedRole.value === 'all' || user.role === selectedRole.value
-    return matchesSearch && matchesRole
+    return matchesSearch
   })
 })
 
-const items = (row) => [
+const columns = [{
+  accessorKey: 'user',
+  header: 'Utilisateur'
+}, {
+  accessorKey: 'role',
+  header: 'Rôle'
+}, {
+  accessorKey: 'tel',
+  header: 'Téléphone'
+}, {
+  accessorKey: 'actions',
+  header: '',
+  id: 'actions'
+}]
+
+const roles = {
+  superadmin: { label: 'Super Admin', color: 'cafe' as const },
+  admin: { label: 'Administrateur', color: 'orange' as const },
+  user: { label: 'Client', color: 'green' as const }
+}
+
+const items = (row: User) => [
   [{
     label: 'Modifier',
     icon: 'i-lucide-pencil',
@@ -77,7 +63,7 @@ const items = (row) => [
   }], [{
     label: 'Supprimer',
     icon: 'i-lucide-trash',
-    color: 'red',
+    color: 'red' as const,
     click: () => console.log('Delete', row.id)
   }]
 ]
@@ -143,34 +129,32 @@ const items = (row) => [
       }">
         <template #user-data="{ row }">
           <div class="flex items-center gap-3">
-            <UAvatar :src="row.avatar" :alt="row.name" size="sm" class="border border-neutral-100" />
+            <UAvatar :src="`https://ui-avatars.com/api/?name=${row.original.nom}&background=random`" :alt="row.original.nom" size="sm" class="border border-neutral-100" />
             <div class="flex flex-col">
-              <span class="font-medium text-neutral-800">{{ row.name }}</span>
-              <span class="text-xs text-neutral-400 lowercase">{{ row.email }}</span>
+              <span class="font-medium text-neutral-800">{{ row.original.nom }}</span>
+              <span class="text-xs text-neutral-400 lowercase">{{ row.original.email }}</span>
             </div>
           </div>
         </template>
 
         <template #role-data="{ row }">
           <UBadge 
-            :color="roles[row.role].color" 
+            v-if="row.original.role"
+            :color="roles[row.original.role.role as keyof typeof roles]?.color || 'neutral'" 
             variant="subtle" 
             size="sm"
             class="uppercase tracking-widest text-[0.6rem] px-2 py-0.5"
           >
-            {{ roles[row.role].label }}
+            {{ roles[row.original.role.role as keyof typeof roles]?.label || row.original.role.role }}
           </UBadge>
         </template>
 
-        <template #status-data="{ row }">
-          <div class="flex items-center gap-1.5">
-            <span class="h-1.5 w-1.5 rounded-full" :class="row.status === 'active' ? 'bg-green-500' : 'bg-neutral-300'"></span>
-            <span class="text-xs capitalize">{{ row.status === 'active' ? 'Actif' : 'Inactif' }}</span>
-          </div>
+        <template #tel-data="{ row }">
+          <span class="text-xs text-neutral-500">{{ row.original.tel || 'Non renseigné' }}</span>
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row)">
+          <UDropdown :items="items(row.original)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" />
           </UDropdown>
         </template>
