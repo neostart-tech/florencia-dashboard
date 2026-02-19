@@ -1,19 +1,12 @@
 <script setup lang="ts">
-interface Calendar {
-  id: string
-  debut: string
-  fin: string
-  is_active: boolean
-  horaires?: any[]
-}
+import { storeToRefs } from 'pinia'
 
-const config = useRuntimeConfig()
-const token = typeof window !== 'undefined' ? localStorage.getItem('florencia_admin_token') : null
+const calendrierStore = useCalendrierStore()
+const { calendriers: calendars } = storeToRefs(calendrierStore)
 
-const { data: calendars, refresh } = await useFetch<Calendar[]>(`${config.public.apiBase}/calendriers`, {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
+// Initialisation
+onMounted(() => {
+  calendrierStore.fetchCalendriers()
 })
 
 const isModalOpen = ref(false)
@@ -26,29 +19,21 @@ const newCalendar = ref({
 
 const handleCreate = async () => {
   try {
-    await $fetch(`${config.public.apiBase}/calendriers`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: newCalendar.value
-    })
-    toast.add({ title: 'Succès', description: 'Calendrier planifié', color: 'green' })
+    await calendrierStore.createCalendrier(newCalendar.value)
+    toast.add({ title: 'Succès', description: 'Calendrier planifié', color: 'success' })
     isModalOpen.value = false
-    refresh()
+    calendrierStore.fetchCalendriers()
   } catch (error: any) {
-    toast.add({ title: 'Erreur', description: error.data?.message || 'Erreur', color: 'red' })
+    toast.add({ title: 'Erreur', description: error.data?.message || 'Erreur', color: 'error' })
   }
 }
 
-const toggleActive = async (cal: Calendar) => {
+const toggleActive = async (cal: any) => {
   try {
-    await $fetch(`${config.public.apiBase}/calendriers/${cal.id}`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-      body: { is_active: !cal.is_active }
-    })
-    refresh()
+    await calendrierStore.updateCalendrier({ ...cal, is_active: !cal.is_active })
+    calendrierStore.fetchCalendriers()
   } catch (error) {
-    toast.add({ title: 'Erreur', color: 'red' })
+    toast.add({ title: 'Erreur', color: 'error' })
   }
 }
 
@@ -66,7 +51,7 @@ const columns = [{
 </script>
 
 <template>
-  <div class="p-8 space-y-8">
+  <div class="p-6 lg:p-10 space-y-6 animate-page-in">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-serif text-neutral-900 tracking-tight">Calendrier</h1>
@@ -86,7 +71,7 @@ const columns = [{
         <UCard v-for="cal in calendars?.filter(c => c.is_active)" :key="cal.id" 
           class="border-2 border-cafe-200 bg-cafe-50 shadow-xl overflow-hidden relative">
           <div class="absolute top-0 right-0 p-4">
-            <UBadge color="cafe" variant="solid" size="sm" class="animate-pulse">Actif</UBadge>
+            <UBadge color="primary" variant="solid" size="sm" class="animate-pulse">Actif</UBadge>
           </div>
           <div class="p-4 space-y-4">
             <h3 class="text-cafe-800 font-serif text-xl">Période Actuelle</h3>
@@ -135,7 +120,7 @@ const columns = [{
     </div>
 
     <UModal v-model="isModalOpen">
-      <UCard title="Planifier une nouvelle période">
+      <UCard :ui="{ body: 'p-6', header: 'px-6 py-4', footer: 'px-6 py-4' }">
         <template #header>
           <div class="flex items-center justify-between">
             <h3 class="text-base font-semibold text-neutral-900">Nouvelle Période</h3>
@@ -143,7 +128,7 @@ const columns = [{
           </div>
         </template>
 
-        <div class="space-y-4 py-4">
+        <div class="space-y-4">
           <UFormField label="Date de début">
             <UInput v-model="newCalendar.debut" type="date" />
           </UFormField>

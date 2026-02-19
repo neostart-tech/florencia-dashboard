@@ -1,31 +1,63 @@
 <script setup lang="ts">
-interface User {
-  id: string
-  nom: string
-  email: string
-  tel: string
-  role?: { role: string }
-}
+import { storeToRefs } from 'pinia'
 
-const config = useRuntimeConfig()
-const token = typeof window !== 'undefined' ? localStorage.getItem('florencia_admin_token') : null
+interface UserRole { role: string }
+interface User { id: string | number; nom: string; email: string; tel?: string; role?: UserRole }
 
-const { data: usersResponse, refresh } = await useFetch<any>(`${config.public.apiBase}/admins`, {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
+const userStore = useUserStore()
+const { users } = storeToRefs(userStore)
+const toast = useToast()
+
+// Initialisation
+onMounted(() => {
+  userStore.fetchUsers()
 })
-
-const users = computed(() => usersResponse.value?.data || [])
 
 const search = ref('')
 const selectedRole = ref('all')
 const isModalOpen = ref(false)
+const isSubmitting = ref(false)
+
+// Formulaire de création
+const newUser = ref({
+  nom: '',
+  email: '',
+  password: '',
+  role: 'client',
+  tel: ''
+})
+
+const resetForm = () => {
+  newUser.value = { nom: '', email: '', password: '', role: 'client', tel: '' }
+}
+
+const handleCreateUser = async () => {
+  if (!newUser.value.nom || !newUser.value.email || !newUser.value.password) {
+    toast.add({ title: 'Champs requis', description: 'Veuillez remplir le nom, l\'email et le mot de passe.', color: 'warning' })
+    return
+  }
+  isSubmitting.value = true
+  try {
+    await userStore.createUser(newUser.value)
+    toast.add({ title: 'Compte créé', description: `${newUser.value.nom} a été ajouté avec succès.`, color: 'success' })
+    isModalOpen.value = false
+    resetForm()
+    userStore.fetchUsers()
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.data?.message || 'Impossible de créer le compte.',
+      color: 'error'
+    })
+  } finally {
+    isSubmitting.value = false
+  }
+}
 
 const filteredUsers = computed(() => {
-  return users.value.filter((user: User) => {
-    const matchesSearch = user.nom.toLowerCase().includes(search.value.toLowerCase()) || 
-                         user.email.toLowerCase().includes(search.value.toLowerCase())
+  return (users.value || []).filter((user: any) => {
+    const matchesSearch = user.nom?.toLowerCase().includes(search.value.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(search.value.toLowerCase())
     return matchesSearch
   })
 })
@@ -45,10 +77,12 @@ const columns = [{
   id: 'actions'
 }]
 
-const roles = {
-  superadmin: { label: 'Super Admin', color: 'cafe' as const },
-  admin: { label: 'Administrateur', color: 'orange' as const },
-  user: { label: 'Client', color: 'green' as const }
+const roles: Record<string, { label: string; color: 'primary' | 'neutral' | 'success' | 'warning' | 'error' }> = {
+  superadmin: { label: 'Super Admin', color: 'primary' },
+  admin: { label: 'Administrateur', color: 'warning' },
+  user: { label: 'Client', color: 'success' },
+  client: { label: 'Client', color: 'success' },
+  personnel: { label: 'Personnel', color: 'neutral' }
 }
 
 const items = (row: User) => [
@@ -56,80 +90,83 @@ const items = (row: User) => [
     label: 'Modifier',
     icon: 'i-lucide-pencil',
     click: () => console.log('Edit', row.id)
-  }, {
-    label: 'Changer le statut',
-    icon: 'i-lucide-refresh-cw',
-    click: () => console.log('Status', row.id)
   }], [{
     label: 'Supprimer',
     icon: 'i-lucide-trash',
-    color: 'red' as const,
-    click: () => console.log('Delete', row.id)
+    color: 'error' as const,
+    click: async () => {
+      if (!confirm(`Supprimer l'utilisateur ${row.nom} ?`)) return
+      try {
+        await userStore.deleteUser(row.id as string)
+        toast.add({ title: 'Supprimé', description: `${row.nom} a été retiré.`, color: 'success' })
+        userStore.fetchUsers()
+      } catch {
+        toast.add({ title: 'Erreur', color: 'error' })
+      }
+    }
   }]
 ]
 </script>
 
 <template>
-  <div class="p-6 lg:p-10 space-y-8 animate-fade-in">
+  <div class="p-6 lg:p-10 space-y-6 animate-fade-in">
     <!-- Header Page -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-serif text-neutral-800 tracking-wide uppercase">Gestion des Utilisateurs</h1>
-        <p class="text-neutral-500 font-sans mt-1">Gérez les accès et les rôles de votre plateforme Florencia.</p>
+        <p class="text-[0.7rem] uppercase tracking-[0.3em] text-cafe-500 font-sans mb-1">Gestion</p>
+        <h1 class="text-3xl font-serif text-neutral-800 tracking-wide uppercase">Utilisateurs</h1>
+        <p class="text-sm text-neutral-500 font-sans mt-1">Gérez les accès et les rôles de votre plateforme Florencia.</p>
       </div>
       <UButton
+        id="btn-nouvel-utilisateur"
         icon="i-lucide-user-plus"
         label="Nouvel Utilisateur"
         size="lg"
-        class="bg-cafe-600 hover:bg-cafe-700 font-sans tracking-wide uppercase text-xs px-6"
+        class="bg-cafe-600 hover:bg-cafe-700 font-sans tracking-wide uppercase text-xs px-6 shadow-lg"
         @click="isModalOpen = true"
       />
     </div>
 
-    <!-- Filters & Stats -->
-    <UCard class="border-neutral-100 shadow-sm" :ui="{ body: 'p-4' }">
+    <!-- Filters -->
+    <UCard class="border-none shadow-sm bg-white/80 backdrop-blur-sm" :ui="{ body: 'p-4' }">
       <div class="flex flex-col md:flex-row gap-4 items-center">
-        <div class="w-full md:w-96">
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Rechercher un nom ou un email..."
-            size="md"
-            color="neutral"
-            variant="subtle"
-            class="font-sans"
-          />
-        </div>
-        <div class="w-full md:w-48">
-          <USelect
-            v-model="selectedRole"
-            :options="[
-              { label: 'Tous les rôles', value: 'all' },
-              { label: 'Administrateurs', value: 'admin' },
-              { label: 'Personnel', value: 'personnel' },
-              { label: 'Clients', value: 'client' }
-            ]"
-            size="md"
-            color="neutral"
-            variant="subtle"
-            class="font-sans"
-          />
-        </div>
-        <div class="ml-auto flex gap-4 text-xs font-sans uppercase tracking-widest text-neutral-400">
-          <span>Total: {{ filteredUsers.length }}</span>
+        <UInput
+          v-model="search"
+          icon="i-lucide-search"
+          placeholder="Rechercher un nom ou un email..."
+          size="lg"
+          color="neutral"
+          variant="outline"
+          class="font-sans flex-1"
+        />
+        <USelect
+          v-model="selectedRole"
+          :options="[
+            { label: 'Tous les rôles', value: 'all' },
+            { label: 'Administrateurs', value: 'admin' },
+            { label: 'Personnel', value: 'personnel' },
+            { label: 'Clients', value: 'client' }
+          ]"
+          size="lg"
+          color="neutral"
+          variant="outline"
+          class="font-sans w-full md:w-56"
+        />
+        <div class="text-xs font-sans uppercase tracking-widest text-neutral-400 whitespace-nowrap">
+          Total : <span class="text-neutral-700 font-semibold">{{ filteredUsers.length }}</span>
         </div>
       </div>
     </UCard>
 
     <!-- Table -->
-    <UCard class="overflow-hidden border-neutral-100 shadow-xl shadow-cafe-900/5">
+    <UCard class="overflow-hidden border-none shadow-[0_20px_60px_rgba(108,66,57,0.06)] bg-white rounded-3xl">
       <UTable :rows="filteredUsers" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.65rem] tracking-[0.2em]',
         td: 'font-sans py-4'
       }">
         <template #user-data="{ row }">
           <div class="flex items-center gap-3">
-            <UAvatar :src="`https://ui-avatars.com/api/?name=${row.original.nom}&background=random`" :alt="row.original.nom" size="sm" class="border border-neutral-100" />
+            <UAvatar :src="`https://ui-avatars.com/api/?name=${row.original.nom}&background=EFE9E6&color=56352E`" :alt="row.original.nom" size="md" class="border-2 border-cafe-50" />
             <div class="flex flex-col">
               <span class="font-medium text-neutral-800">{{ row.original.nom }}</span>
               <span class="text-xs text-neutral-400 lowercase">{{ row.original.email }}</span>
@@ -143,10 +180,11 @@ const items = (row: User) => [
             :color="roles[row.original.role.role as keyof typeof roles]?.color || 'neutral'" 
             variant="subtle" 
             size="sm"
-            class="uppercase tracking-widest text-[0.6rem] px-2 py-0.5"
+            class="uppercase tracking-widest text-[0.6rem]"
           >
             {{ roles[row.original.role.role as keyof typeof roles]?.label || row.original.role.role }}
           </UBadge>
+          <span v-else class="text-xs text-neutral-300">—</span>
         </template>
 
         <template #tel-data="{ row }">
@@ -154,46 +192,122 @@ const items = (row: User) => [
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row.original)">
+          <UDropdown :items="items(row.original as unknown as User)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" />
           </UDropdown>
+        </template>
+
+        <template #empty-state>
+          <div class="flex flex-col items-center justify-center py-16 gap-3">
+            <UIcon name="i-lucide-users" class="w-10 h-10 text-neutral-200" />
+            <p class="text-sm text-neutral-400 font-sans">Aucun utilisateur trouvé</p>
+          </div>
         </template>
       </UTable>
     </UCard>
 
-    <!-- Modal Mock for New User -->
-    <UModal v-model="isModalOpen">
-      <UCard :ui="{ ring: '', divide: 'divide-y divide-gray-100' }">
+    <!-- Modal Nouvel Utilisateur -->
+    <UModal v-model="isModalOpen" prevent-close>
+      <UCard :ui="{ body: 'p-6', header: 'border-b border-neutral-100 px-6 py-4', footer: 'border-t border-neutral-100 px-6 py-4' }">
         <template #header>
           <div class="flex items-center justify-between">
-            <h3 class="text-lg font-serif tracking-wide">Ajouter un collaborateur</h3>
-            <UButton color="gray" variant="ghost" icon="i-lucide-x" class="-my-1" @click="isModalOpen = false" />
+            <div>
+              <h3 class="text-lg font-serif tracking-wide text-neutral-800">Nouvel Utilisateur</h3>
+              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Créer un compte sur la plateforme</p>
+            </div>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
           </div>
         </template>
 
-        <div class="p-4 space-y-4">
-          <UFormField label="Nom Complet">
-            <UInput placeholder="Ex: Marie Laurent" size="md" />
-          </UFormField>
-          <UFormField label="Email">
-            <UInput type="email" placeholder="marie@example.com" size="md" />
-          </UFormField>
-          <UFormField label="Rôle">
-            <USelect 
-              :options="[
-                { label: 'Administrateur', value: 'admin' },
-                { label: 'Personnel', value: 'personnel' },
-                { label: 'Client', value: 'client' }
-              ]" 
-              size="md"
-            />
-          </UFormField>
-        </div>
+        <form class="space-y-3" @submit.prevent="handleCreateUser">
+          <!-- Ligne 1 : Nom + Email -->
+          <div class="grid grid-cols-2 gap-3">
+            <UFormField label="Nom Complet" required>
+              <UInput
+                id="input-nom"
+                v-model="newUser.nom"
+                placeholder="Ex: Marie Laurent"
+                size="md"
+                icon="i-lucide-user"
+                variant="outline"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Adresse Email" required>
+              <UInput
+                id="input-email"
+                v-model="newUser.email"
+                type="email"
+                placeholder="marie@florencia.com"
+                size="md"
+                icon="i-lucide-mail"
+                variant="outline"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <!-- Ligne 2 : Téléphone + Mot de passe -->
+          <div class="grid grid-cols-2 gap-3">
+            <UFormField label="Téléphone (optionnel)">
+              <UInput
+                id="input-tel"
+                v-model="newUser.tel"
+                placeholder="+228 90 00 00 00"
+                size="md"
+                icon="i-lucide-phone"
+                variant="outline"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField label="Mot de passe" required>
+              <UInput
+                id="input-password"
+                v-model="newUser.password"
+                type="password"
+                placeholder="••••••••"
+                size="md"
+                icon="i-lucide-lock"
+                variant="outline"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <!-- Ligne 3 : Rôle seul sur demi-largeur -->
+          <div class="grid grid-cols-2 gap-3">
+            <UFormField label="Rôle">
+              <select
+                id="input-role"
+                v-model="newUser.role"
+                class="w-full h-9 rounded-md border border-neutral-200 px-3 text-sm font-sans text-neutral-700 bg-white focus:outline-none focus:ring-2 focus:ring-cafe-300 focus:border-cafe-400 transition"
+              >
+                <option value="admin">Administrateur</option>
+                <option value="personnel">Personnel</option>
+                <option value="client">Client</option>
+              </select>
+            </UFormField>
+          </div>
+        </form>
 
         <template #footer>
           <div class="flex justify-end gap-3">
-            <UButton label="Annuler" color="neutral" variant="ghost" @click="isModalOpen = false" />
-            <UButton label="Créer le compte" class="bg-cafe-600" @click="isModalOpen = false" />
+            <UButton
+              label="Annuler"
+              color="neutral"
+              variant="ghost"
+              class="font-sans uppercase tracking-widest text-xs"
+              @click="isModalOpen = false; resetForm()"
+            />
+            <UButton
+              id="btn-creer-compte"
+              label="Créer le compte"
+              class="bg-cafe-700 hover:bg-cafe-800 font-sans uppercase tracking-widest text-xs px-6"
+              :loading="isSubmitting"
+              @click="handleCreateUser"
+            />
           </div>
         </template>
       </UCard>

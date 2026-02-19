@@ -1,6 +1,13 @@
 <script setup lang="ts">
-// Commandes (Orders) Page
-// Note: Backend integration pending CommandeController implementation
+import { storeToRefs } from 'pinia'
+
+const orderStore = useOrderStore()
+const { orders } = storeToRefs(orderStore)
+
+// Initialisation
+onMounted(() => {
+  // orderStore.fetchOrders() // Décommenter quand le controller sera prêt
+})
 
 const columns = [{
   accessorKey: 'reference',
@@ -22,25 +29,6 @@ const columns = [{
   header: '',
   id: 'actions'
 }]
-
-const orders = ref([
-  {
-    id: '1',
-    reference: 'ORD-2026-001',
-    client: 'Sophie Martin',
-    date: '2026-02-17',
-    total: '12 500 Fcfa',
-    statut: 'terminé'
-  },
-  {
-    id: '2',
-    reference: 'ORD-2026-002',
-    client: 'Jean Dupont',
-    date: '2026-02-17',
-    total: '35 000 Fcfa',
-    statut: 'en_cours'
-  }
-])
 
 const stats = [
   { label: 'Total Commandes', value: '124', icon: 'i-lucide-shopping-cart' },

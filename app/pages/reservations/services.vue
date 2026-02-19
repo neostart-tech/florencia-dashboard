@@ -1,32 +1,33 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
+
 interface Service {
-  id: string
+  id: string | number
   nom: string
   type: 'simple' | 'pack'
   duree: number
-  images?: { path: string }[]
+  price?: string | number
 }
 
-const config = useRuntimeConfig()
-const token = typeof window !== 'undefined' ? localStorage.getItem('florencia_admin_token') : null
+const serviceStore = useServiceStore()
+const { services } = storeToRefs(serviceStore)
+const toast = useToast()
 
-// Récupération dynamique des services
-const { data: servicesResponse, refresh } = await useFetch<any>(`${config.public.apiBase}/services`, {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
+// Initialisation
+onMounted(() => {
+  serviceStore.fetchServices().catch(() => {
+    toast.add({ title: 'Erreur', description: 'Impossible de charger les services.', color: 'error' })
+  })
 })
 
-const services = computed(() => servicesResponse.value?.data || [])
-
 const columns = [{
-  accessorKey: 'nom', // Changed from 'name' to 'nom' to match Service interface
+  accessorKey: 'nom',
   header: 'Service'
 }, {
   accessorKey: 'type',
   header: 'Type'
 }, {
-  accessorKey: 'duree', // Changed from 'duration' to 'duree' to match Service interface
+  accessorKey: 'duree',
   header: 'Durée'
 }, {
   accessorKey: 'actions',
@@ -35,8 +36,54 @@ const columns = [{
 }]
 
 const isModalOpen = ref(false)
+const isSubmitting = ref(false)
 
-const items = (row: Service) => [ // Changed row type to Service
+const newService = ref({
+  nom: '',
+  type: 'simple' as const,
+  duree: 60
+})
+
+const resetForm = () => {
+  newService.value = { nom: '', type: 'simple', duree: 60 }
+}
+
+const handleCreateService = async () => {
+  if (!newService.value.nom || !newService.value.duree) {
+    toast.add({ title: 'Champs requis', description: 'Le nom et la durée sont obligatoires.', color: 'warning' })
+    return
+  }
+
+  isSubmitting.value = true
+  try {
+    await serviceStore.createService(newService.value)
+    toast.add({ title: 'Succès', description: 'Le service a été créé.', color: 'success' })
+    isModalOpen.value = false
+    resetForm()
+    serviceStore.fetchServices()
+  } catch (error: any) {
+    toast.add({
+      title: 'Erreur',
+      description: error.response?.data?.message || 'Impossible de créer le service.',
+      color: 'error'
+    })
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const handleDelete = async (row: Service) => {
+  if (!confirm(`Supprimer le service ${row.nom} ?`)) return
+  try {
+    await serviceStore.deleteService(row.id as string)
+    toast.add({ title: 'Supprimé', description: 'Le service a été retiré.', color: 'success' })
+    serviceStore.fetchServices()
+  } catch {
+    toast.add({ title: 'Erreur', color: 'error' })
+  }
+}
+
+const items = (row: Service) => [
   [{
     label: 'Modifier le service',
     icon: 'i-lucide-pencil',
@@ -44,8 +91,8 @@ const items = (row: Service) => [ // Changed row type to Service
   }], [{
     label: 'Supprimer',
     icon: 'i-lucide-trash',
-    color: 'red' as const,
-    click: () => console.log('Delete', row.id)
+    color: 'error' as const,
+    click: () => handleDelete(row)
   }]
 ]
 </script>
@@ -67,14 +114,12 @@ const items = (row: Service) => [ // Changed row type to Service
     </div>
 
     <!-- Stats summary -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <UCard v-for="cat in ['Visage', 'Corps', 'Massage']" :key="cat" class="border-none shadow-sm bg-white rounded-2xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <UCard class="border-none shadow-sm bg-white rounded-2xl">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-[0.6rem] font-sans uppercase tracking-widest text-neutral-400 mb-1">{{ cat }}</p>
-            <p class="text-xl font-serif text-neutral-800 tracking-wide">
-              {{ services.filter(s => s.category === cat).length }} Services
-            </p>
+            <p class="text-[0.6rem] font-sans uppercase tracking-widest text-neutral-400 mb-1">Total Services</p>
+            <p class="text-xl font-serif text-neutral-800 tracking-wide">{{ services.length }} Prestations</p>
           </div>
           <div class="p-2 bg-cafe-50 rounded-lg">
             <UIcon name="i-lucide-sparkles" class="w-4 h-4 text-cafe-600" />
@@ -89,70 +134,87 @@ const items = (row: Service) => [ // Changed row type to Service
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-5'
       }">
-        <template #name-data="{ row }">
+        <template #nom-data="{ row }">
           <div class="flex flex-col max-w-xs">
-            <span class="font-medium text-neutral-800 leading-tight">{{ row.original.name }}</span>
-            <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter mt-1">{{ row.original.category }}</span>
+            <span class="font-medium text-neutral-800 leading-tight">{{ row.original.nom }}</span>
+            <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter mt-1">{{ row.original.type }}</span>
           </div>
         </template>
 
-        <template #duration-data="{ row }">
+        <template #duree-data="{ row }">
           <div class="flex items-center gap-1.5 text-neutral-500">
             <UIcon name="i-lucide-clock" class="w-3.5 h-3.5" />
-            <span class="text-xs">{{ row.original.duration }}</span>
+            <span class="text-xs">{{ row.original.duree }} min</span>
           </div>
-        </template>
-
-        <template #price-data="{ row }">
-          <span class="font-serif text-neutral-700 tracking-wide">{{ row.original.price }}</span>
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row.original)">
+          <UDropdown :items="items(row.original as unknown as Service)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
           </UDropdown>
+        </template>
+
+        <template #empty-state>
+          <div class="flex flex-col items-center justify-center py-16 gap-3">
+            <UIcon name="i-lucide-scissors" class="w-10 h-10 text-neutral-200" />
+            <p class="text-sm text-neutral-400 font-sans">Aucune prestation trouvée</p>
+          </div>
         </template>
       </UTable>
     </UCard>
 
     <!-- Modal for new service -->
-    <UModal v-model="isModalOpen" size="lg">
-      <div class="p-8">
-        <div class="flex items-center justify-between mb-10">
-          <div class="space-y-1">
-            <h3 class="font-serif text-2xl tracking-wide uppercase">Créer une prestation</h3>
-            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-[0.2em]">Ajoutez un nouveau rituel à votre carte</p>
+    <UModal v-model="isModalOpen" size="lg" prevent-close>
+      <UCard :ui="{ body: 'p-8', header: 'border-b border-neutral-100 px-8 py-4', footer: 'border-t border-neutral-100 px-8 py-4' }">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="space-y-1">
+              <h3 class="font-serif text-2xl tracking-wide uppercase">Créer une prestation</h3>
+              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-[0.2em]">Ajoutez un nouveau rituel à votre carte</p>
+            </div>
+            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
           </div>
-          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false" />
-        </div>
+        </template>
 
-        <form class="space-y-8">
-          <UFormField label="Nom du service (Public)">
-            <UInput placeholder="Ex: Rituel Cléopâtre" size="xl" variant="subtle" class="font-serif italic text-lg" />
+        <form class="space-y-4" @submit.prevent="handleCreateService">
+          <UFormField label="Nom du service (Public)" required>
+            <UInput v-model="newService.nom" placeholder="Ex: Rituel Cléopâtre" size="md" variant="outline" class="font-serif italic text-lg" />
           </UFormField>
 
-          <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
-            <UFormField label="Catégorie">
-              <USelect :options="['Visage', 'Massage', 'Onglerie', 'Épilation']" size="lg" variant="subtle" />
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField label="Type">
+              <select
+                v-model="newService.type"
+                class="w-full h-9 rounded-md border border-neutral-200 px-3 text-sm font-sans text-neutral-700 bg-white focus:outline-none focus:ring-2 focus:ring-cafe-300 focus:border-cafe-400 transition"
+              >
+                <option value="simple">Simple</option>
+                <option value="pack">Pack</option>
+              </select>
             </UFormField>
-            <UFormField label="Prix (Fcfa)">
-              <UInput type="number" placeholder="0" size="lg" variant="subtle" />
-            </UFormField>
-            <UFormField label="Durée (Min)">
-              <UInput type="number" placeholder="60" size="lg" variant="subtle" />
+            <UFormField label="Durée (Min)" required>
+              <UInput v-model="newService.duree" type="number" placeholder="60" size="md" variant="outline" />
             </UFormField>
           </div>
 
-          <UFormField label="Description">
-            <UTextarea placeholder="Présentez les bienfaits de ce soin..." variant="subtle" :rows="3" />
-          </UFormField>
-
-          <div class="flex justify-end gap-3 pt-6 border-t border-neutral-50">
-            <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false" />
-            <UButton label="Publier le service" class="bg-cafe-700 px-8 py-4 font-sans uppercase tracking-[0.2em] text-xs shadow-lg shadow-cafe-100" @click="isModalOpen = false" />
+          <div class="flex flex-col items-center justify-center border-2 border-dashed border-neutral-100 rounded-2xl p-6 bg-neutral-50/50 group hover:border-cafe-200 transition-colors cursor-pointer relative overflow-hidden">
+            <UIcon name="i-lucide-image-plus" class="w-10 h-10 text-neutral-300 group-hover:text-cafe-300 transition-colors mb-2" />
+            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest">Image de couverture</p>
+            <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" multiple />
           </div>
         </form>
-      </div>
+
+        <template #footer>
+          <div class="flex justify-end gap-3">
+            <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
+            <UButton
+              label="Publier le service"
+              class="bg-cafe-700 hover:bg-cafe-800 px-8 py-3 font-sans uppercase tracking-[0.2em] text-xs shadow-lg shadow-cafe-100"
+              :loading="isSubmitting"
+              @click="handleCreateService"
+            />
+          </div>
+        </template>
+      </UCard>
     </UModal>
   </div>
 </template>

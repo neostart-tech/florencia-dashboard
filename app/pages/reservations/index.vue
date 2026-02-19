@@ -1,6 +1,13 @@
 <script setup lang="ts">
-// Réservations Page
-// Note: Backend integration pending ReservationController implementation
+import { storeToRefs } from 'pinia'
+
+const reservationStore = useReservationStore()
+const { reservations: bookings } = storeToRefs(reservationStore)
+
+// Initialisation
+onMounted(() => {
+  // reservationStore.fetchReservations() // Décommenter quand le controller sera prêt
+})
 
 const columns = [{
   accessorKey: 'code',
@@ -23,26 +30,7 @@ const columns = [{
   id: 'actions'
 }]
 
-const bookings = ref([
-  {
-    id: '1',
-    code: 'RES-4521',
-    service: 'Service 1',
-    client: 'Aminata Touré',
-    dateTime: '18 Fév 2026 - 14:00',
-    statut: 'confirmé'
-  },
-  {
-    id: '2',
-    code: 'RES-4522',
-    service: 'Service 2',
-    client: 'Cédric Koffi',
-    dateTime: '18 Fév 2026 - 15:30',
-    statut: 'en_attente'
-  }
-])
-
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string | undefined) => {
   switch (status) {
     case 'confirmé': return 'green'
     case 'en_attente': return 'orange'
@@ -53,7 +41,7 @@ const getStatusColor = (status: string) => {
 </script>
 
 <template>
-  <div class="p-8 space-y-8">
+  <div class="p-6 lg:p-10 space-y-6 animate-page-in">
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-serif text-neutral-900 tracking-tight">Réservations</h1>
@@ -87,8 +75,8 @@ const getStatusColor = (status: string) => {
 
         <template #statut-data="{ row }">
           <div class="flex items-center gap-2">
-            <span class="h-1.5 w-1.5 rounded-full" :class="`bg-${getStatusColor(row.original.statut)}-500`"></span>
-            <span class="text-xs font-medium capitalize">{{ row.original.statut.replace('_', ' ') }}</span>
+            <span class="h-1.5 w-1.5 rounded-full" :class="`bg-${getStatusColor(row.original.statut as string | undefined)}-500`"></span>
+            <span class="text-xs font-medium capitalize">{{ (row.original.statut as string | undefined)?.replace('_', ' ') ?? '-' }}</span>
           </div>
         </template>
 

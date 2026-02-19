@@ -7,40 +7,28 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const toast = useToast()
+const authStore = useAuthStore()
 
 const handleLogin = async () => {
   if (!email.value || !password.value) return
 
   loading.value = true
   try {
-    const config = useRuntimeConfig()
-    const response = await $fetch<any>(`${config.public.apiBase}/admin/login`, {
-      method: 'POST',
-      body: {
-        email: email.value,
-        password: password.value
-      }
+    const data = await authStore.login(email.value, password.value)
+
+    toast.add({
+      title: 'Connexion réussie',
+      description: `Bienvenue, ${data.user?.nom || data.user?.name || 'Administrateur'}`,
+      color: 'success'
     })
 
-    if (response.token) {
-      // Stockage du token et des infos utilisateur
-      localStorage.setItem('florencia_admin_token', response.token)
-      localStorage.setItem('florencia_admin_user', JSON.stringify(response.user))
-      
-      toast.add({
-        title: 'Connexion réussie',
-        description: `Bienvenue, ${response.user.name}`,
-        color: 'green'
-      })
-
-      navigateTo('/')
-    }
+    navigateTo('/')
   } catch (error: any) {
     console.error('Login error:', error)
     toast.add({
       title: 'Échec de l\'authentification',
-      description: error.data?.message || 'Identifiants invalides ou erreur serveur',
-      color: 'red'
+      description: error.response?.data?.message || error.data?.message || 'Identifiants invalides ou erreur serveur',
+      color: 'error'
     })
   } finally {
     loading.value = false
@@ -64,9 +52,9 @@ const handleLogin = async () => {
       <UCard 
         class="glass-card border-white/40 shadow-[0_20px_50px_rgba(108,66,57,0.15)] overflow-hidden animate-fade-up"
         :ui="{ 
-          body: 'p-8 sm:p-10', 
-          header: 'border-b border-cafe-50/50 px-8 py-6',
-          footer: 'bg-cafe-50/30 px-8 py-4 border-t border-cafe-50/50'
+          body: 'p-6 sm:p-8', 
+          header: 'border-b border-cafe-50/50 px-6 py-4',
+          footer: 'bg-cafe-50/30 px-6 py-3 border-t border-cafe-50/50'
         }"
       >
         <template #header>
@@ -76,14 +64,14 @@ const handleLogin = async () => {
           </div>
         </template>
         
-        <form @submit.prevent="handleLogin" class="space-y-6">
+        <form @submit.prevent="handleLogin" class="space-y-4">
           <UFormField label="Adresse Email" name="email" :ui="{ label: 'text-[0.7rem] uppercase tracking-widest text-neutral-500 mb-2' }">
             <UInput
               v-model="email"
               type="email"
               placeholder="admin@florencia.com"
               icon="i-lucide-mail"
-              size="xl"
+              size="md"
               variant="subtle"
               class="font-sans border-b border-neutral-100 hover:border-cafe-200 focus:border-cafe-500 transition-all duration-300"
             />
@@ -94,7 +82,7 @@ const handleLogin = async () => {
               v-model="password"
               type="password"
               icon="i-lucide-lock"
-              size="xl"
+              size="md"
               variant="subtle"
               class="font-sans border-b border-neutral-100 hover:border-cafe-200 focus:border-cafe-500 transition-all duration-300"
             />
@@ -109,9 +97,9 @@ const handleLogin = async () => {
           <UButton
             type="submit"
             block
-            size="xl"
+            size="md"
             :loading="loading"
-            class="mt-8 bg-cafe-700 hover:bg-cafe-800 text-white font-sans uppercase tracking-[0.2em] text-xs py-4 transition-all duration-500 shadow-lg hover:shadow-cafe-200"
+            class="mt-4 bg-cafe-700 hover:bg-cafe-800 text-white font-sans uppercase tracking-[0.2em] text-[0.7rem] py-3 transition-all duration-500 shadow-lg hover:shadow-cafe-200"
           >
             S'authentifier
           </UButton>
