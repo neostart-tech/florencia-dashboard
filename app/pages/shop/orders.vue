@@ -1,12 +1,24 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 
+interface Order {
+  id: string | number
+  reference: string
+  prix_total: number
+  statut: string
+  created_at: string
+  user?: { nom: string; prenom: string; email: string }
+}
+
 const orderStore = useOrderStore()
 const { orders } = storeToRefs(orderStore)
+const toast = useToast()
 
 // Initialisation
 onMounted(() => {
-  // orderStore.fetchOrders() // Décommenter quand le controller sera prêt
+  orderStore.fetchOrders().catch(() => {
+    toast.add({ title: 'Erreur', description: 'Impossible de charger les commandes.', color: 'error' })
+  })
 })
 
 const columns = [{
@@ -30,67 +42,118 @@ const columns = [{
   id: 'actions'
 }]
 
-const stats = [
-  { label: 'Total Commandes', value: '124', icon: 'i-lucide-shopping-cart' },
-  { label: 'En attente', value: '8', icon: 'i-lucide-clock' },
-  { label: 'Revenu du mois', value: '1.2M Fcfa', icon: 'i-lucide-banknote' }
-]
+const handleUpdateStatus = async (order: Order, newStatus: string) => {
+  try {
+    await orderStore.updateOrderStatus(order.id, newStatus)
+    toast.add({ title: 'Succès', description: 'Statut mis à jour', color: 'success' })
+    orderStore.fetchOrders()
+  } catch {
+    toast.add({ title: 'Erreur', color: 'error' })
+  }
+}
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'termine': return 'green'
-    case 'en_cours': return 'orange'
+  switch (status.toLowerCase()) {
+    case 'termine':
+    case 'livré': return 'success'
+    case 'en_cours':
+    case 'payé': return 'primary'
+    case 'attente': return 'warning'
     default: return 'neutral'
   }
+}
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
 }
 </script>
 
 <template>
-  <div class="p-8 space-y-8">
-    <div class="flex items-center justify-between">
+  <div class="p-6 lg:p-10 space-y-8 animate-page-in">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
-        <h1 class="text-3xl font-serif text-neutral-900 tracking-tight">Commandes</h1>
-        <p class="text-sm text-neutral-500 font-sans mt-1 italic">Suivez vos ventes et livraisons</p>
+        <p class="text-[0.7rem] uppercase tracking-[0.3em] text-cafe-500 font-sans mb-1">Ventes & Expéditions</p>
+        <h1 class="text-3xl font-serif text-neutral-800 tracking-wide uppercase">Gestion des Commandes</h1>
       </div>
     </div>
 
+    <!-- Stats summary -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <UCard v-for="stat in stats" :key="stat.label" class="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+      <UCard class="border-none shadow-sm bg-white rounded-2xl">
         <div class="flex items-center gap-4">
-          <div class="p-3 rounded-2xl bg-cafe-50 text-cafe-600">
-            <UIcon :name="stat.icon" class="w-6 h-6" />
+          <div class="p-3 bg-cafe-50 rounded-xl text-cafe-600">
+            <UIcon name="i-lucide-shopping-bag" class="w-6 h-6" />
           </div>
           <div>
-            <p class="text-xs text-neutral-400 uppercase tracking-widest font-sans">{{ stat.label }}</p>
-            <p class="text-2xl font-serif text-neutral-900">{{ stat.value }}</p>
+            <p class="text-[0.6rem] uppercase tracking-widest text-neutral-400">Total Commandes</p>
+            <p class="text-2xl font-serif text-neutral-800">{{ orders.length }}</p>
           </div>
         </div>
       </UCard>
     </div>
 
-    <UCard class="border-none shadow-[0_20px_50px_rgba(0,0,0,0.03)] bg-white rounded-3xl overflow-hidden">
+    <!-- Orders Table -->
+    <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
       <UTable :rows="orders" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
-        td: 'font-sans py-4'
+        td: 'font-sans py-5'
       }">
         <template #reference-data="{ row }">
-          <span class="font-mono text-xs font-bold text-cafe-700">{{ row.original.reference }}</span>
+          <span class="font-mono text-xs font-bold text-cafe-700 tracking-wider">#{{ (row.original as Order).reference.substring(0, 8) }}</span>
         </template>
 
-        <template #statut-data="{ row }">
-          <UBadge :color="getStatusColor(row.original.statut)" variant="subtle" size="sm" class="uppercase text-[0.6rem] tracking-tighter">
-            {{ row.original.statut === 'en_cours' ? 'En cours' : 'Terminé' }}
-          </UBadge>
+        <template #client-data="{ row }">
+          <div class="flex flex-col">
+            <span class="font-medium text-neutral-800">{{ (row.original as Order).user?.prenom }} {{ (row.original as Order).user?.nom }}</span>
+            <span class="text-[0.65rem] text-neutral-400">{{ (row.original as Order).user?.email }}</span>
+          </div>
+        </template>
+
+        <template #date-data="{ row }">
+          <span class="text-xs text-neutral-600">{{ formatDate((row.original as Order).created_at) }}</span>
         </template>
 
         <template #total-data="{ row }">
-          <span class="font-serif text-neutral-800">{{ row.original.total }}</span>
+          <span class="font-serif text-neutral-800">{{ (row.original as Order).prix_total }} Fcfa</span>
+        </template>
+
+        <template #statut-data="{ row }">
+          <UBadge :color="getStatusColor((row.original as Order).statut)" variant="subtle" size="sm" class="uppercase text-[0.6rem] tracking-widest px-2">
+            {{ (row.original as Order).statut }}
+          </UBadge>
         </template>
 
         <template #actions-data="{ row }">
-          <UButton color="neutral" variant="ghost" icon="i-lucide-eye" />
+          <UDropdown :items="[
+            [{ label: 'Marquer comme Livré', icon: 'i-lucide-check-circle', click: () => handleUpdateStatus(row.original as Order, 'Livré') }],
+            [{ label: 'Annuler', icon: 'i-lucide-x-circle', color: 'error' as const }]
+          ]">
+            <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
+          </UDropdown>
+        </template>
+
+        <template #empty-state>
+          <div class="flex flex-col items-center justify-center py-16 gap-3">
+            <UIcon name="i-lucide-package-open" class="w-10 h-10 text-neutral-200" />
+            <p class="text-sm text-neutral-400 font-sans">Aucune commande enregistrée</p>
+          </div>
         </template>
       </UTable>
     </UCard>
   </div>
 </template>
+
+<style scoped>
+.animate-page-in {
+  animation: pageIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>

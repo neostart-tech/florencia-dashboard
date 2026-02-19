@@ -14,8 +14,8 @@ export const useOrderStore = defineStore('order', {
             const response = await axios.get('/commandes')
             this.setOrders(response.data.data || response.data)
         },
-        async updateOrderStatus(id, status) {
-            const response = await axios.put(`/commandes/${id}/status`, { status })
+        async updateOrderStatus(id: string | number, status: string) {
+            const response = await axios.put(`/commandes/${id}`, { statut: status })
             return response.data
         }
     }

@@ -14,11 +14,7 @@ export const useReservationStore = defineStore('reservation', {
             const response = await axios.get('/reservations')
             this.setReservations(response.data.data || response.data)
         },
-        async updateReservationStatus(id, status) {
-            const response = await axios.put(`/reservations/${id}/status`, { status })
-            return response.data
-        },
-        async deleteReservation(id) {
+        async deleteReservation(id: string | number) {
             await axios.delete(`/reservations/${id}`)
         }
     }
