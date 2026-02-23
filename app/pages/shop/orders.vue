@@ -104,37 +104,37 @@ const formatDate = (date: string) => {
         td: 'font-sans py-5'
       }">
         <template #reference-data="{ row }">
-          <span class="font-mono text-xs font-bold text-cafe-700 tracking-wider">#{{ (row.original as Order).reference.substring(0, 8) }}</span>
+          <span class="font-mono text-xs font-bold text-cafe-700 tracking-wider">#{{ (row.original as any).reference.substring(0, 8) }}</span>
         </template>
 
         <template #client-data="{ row }">
           <div class="flex flex-col">
-            <span class="font-medium text-neutral-800">{{ (row.original as Order).user?.prenom }} {{ (row.original as Order).user?.nom }}</span>
-            <span class="text-[0.65rem] text-neutral-400">{{ (row.original as Order).user?.email }}</span>
+            <span class="font-medium text-neutral-800">{{ (row.original as any).user?.prenom }} {{ (row.original as any).user?.nom }}</span>
+            <span class="text-[0.65rem] text-neutral-400">{{ (row.original as any).user?.email }}</span>
           </div>
         </template>
 
         <template #date-data="{ row }">
-          <span class="text-xs text-neutral-600">{{ formatDate((row.original as Order).created_at) }}</span>
+          <span class="text-xs text-neutral-600">{{ formatDate((row.original as any).created_at) }}</span>
         </template>
 
         <template #total-data="{ row }">
-          <span class="font-serif text-neutral-800">{{ (row.original as Order).prix_total }} Fcfa</span>
+          <span class="font-serif text-neutral-800">{{ (row.original as any).prix_total }} Fcfa</span>
         </template>
 
         <template #statut-data="{ row }">
-          <UBadge :color="getStatusColor((row.original as Order).statut)" variant="subtle" size="sm" class="uppercase text-[0.6rem] tracking-widest px-2">
-            {{ (row.original as Order).statut }}
+          <UBadge :color="getStatusColor((row.original as any).statut)" variant="subtle" size="sm" class="uppercase text-[0.6rem] tracking-widest px-2">
+            {{ (row.original as any).statut }}
           </UBadge>
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="[
-            [{ label: 'Marquer comme Livré', icon: 'i-lucide-check-circle', click: () => handleUpdateStatus(row.original as Order, 'Livré') }],
+          <UDropdownMenu :items="[
+            [{ label: 'Marquer comme Livré', icon: 'i-lucide-check-circle', onSelect: () => handleUpdateStatus(row.original as any, 'Livré') }],
             [{ label: 'Annuler', icon: 'i-lucide-x-circle', color: 'error' as const }]
           ]">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
-          </UDropdown>
+          </UDropdownMenu>
         </template>
 
         <template #empty-state>

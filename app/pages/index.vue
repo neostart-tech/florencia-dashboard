@@ -10,12 +10,16 @@ const { users } = storeToRefs(userStore)
 const { articles } = storeToRefs(articleStore)
 const { services } = storeToRefs(serviceStore)
 
+const analyticStore = useAnalyticsStore()
+const { periodicReports } = storeToRefs(analyticStore)
+
 onMounted(() => {
   // Charger les données pour alimenter les stats
   Promise.all([
     userStore.fetchUsers(),
     articleStore.fetchArticles(),
-    serviceStore.fetchServices()
+    serviceStore.fetchServices(),
+    analyticStore.fetchPeriodicReport('monthly')
   ])
 })
 
@@ -23,7 +27,7 @@ const stats = computed(() => [
   { label: 'Utilisateurs', value: users.value.length.toString(), icon: 'i-lucide-users', trend: 'Total', color: 'cafe' },
   { label: 'Services', value: services.value.length.toString(), icon: 'i-lucide-scissors', trend: 'Catalogue', color: 'cafe' },
   { label: 'Articles Boutique', value: articles.value.length.toString(), icon: 'i-lucide-package', trend: 'Stock', color: 'cafe' },
-  { label: 'Revenu Estimé', value: '— Pcfa', icon: 'i-lucide-coins', trend: 'Initial', color: 'cafe' }
+  { label: 'Chiffre Mensuel', value: periodicReports.value.monthly ? `${periodicReports.value.monthly.revenue} Fcfa` : '— Fcfa', icon: 'i-lucide-coins', trend: 'Mois en cours', color: 'cafe' }
 ])
 
 // On garde les rendez-vous mockés car le controller n'est pas encore prêt backend

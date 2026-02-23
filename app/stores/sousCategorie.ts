@@ -1,18 +1,27 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const useSousCategorieStore = defineStore('sousCategorie', {
     state: () => ({
-        sousCategories: [],
+        sousCategories: [] as any[],
         sousCategorie: null
     }),
     actions: {
-        setSousCategories(items) {
+        setSousCategories(items: any[]) {
             this.sousCategories = items
         },
         async fetchSousCategories() {
-            const response = await axios.get('/sous-categories')
+            const api = useApi()
+            const response = await api.get('/sous-categories')
             this.setSousCategories(response.data.data || response.data)
+        },
+        async createSousCategorie(data: any) {
+            const api = useApi()
+            const response = await api.post('/sous-categories', data)
+            return response.data
+        },
+        async deleteSousCategorie(id: string | number) {
+            const api = useApi()
+            await api.delete(`/sous-categories/${id}`)
         }
     }
 })

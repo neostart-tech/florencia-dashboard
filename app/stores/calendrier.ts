@@ -1,37 +1,32 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const useCalendrierStore = defineStore('calendrier', {
     state: () => ({
-        calendriers: [],
+        calendriers: [] as any[],
         calendrier: null
     }),
     actions: {
-        setCalendriers(calendriers) {
+        setCalendriers(calendriers: any[]) {
             this.calendriers = calendriers
         },
-        setCalendrier(calendrier) {
-            this.calendrier = calendrier
-        },
         async fetchCalendriers() {
-            const response = await axios.get('/calendriers')
+            const api = useApi()
+            const response = await api.get('/calendriers')
             this.setCalendriers(response.data.data || response.data)
         },
-        async fetchCalendrier(id) {
-            const response = await axios.get('/calendriers/' + id)
-            this.setCalendrier(response.data.data || response.data)
+        async createCalendrier(data: any) {
+            const api = useApi()
+            const response = await api.post('/calendriers', data)
+            return response.data
         },
-        async createCalendrier(calendrier) {
-            const response = await axios.post('/calendriers', calendrier)
-            this.setCalendrier(response.data.data || response.data)
+        async updateCalendrier(cal: any) {
+            const api = useApi()
+            const response = await api.put(`/calendriers/${cal.id}`, { is_active: cal.is_active })
+            return response.data
         },
-        async updateCalendrier(calendrier) {
-            const response = await axios.put('/calendriers/' + calendrier.id, calendrier)
-            this.setCalendrier(response.data.data || response.data)
-        },
-        async deleteCalendrier(id) {
-            await axios.delete('/calendriers/' + id)
-            this.setCalendrier(null)
+        async deleteCalendrier(id: string | number) {
+            const api = useApi()
+            await api.delete(`/calendriers/${id}`)
         }
     }
 })

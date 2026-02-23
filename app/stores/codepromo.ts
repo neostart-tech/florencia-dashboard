@@ -1,33 +1,27 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const useCodePromoStore = defineStore('codepromo', {
     state: () => ({
-        codepromos: [],
+        codepromos: [] as any[],
         codepromo: null
     }),
     actions: {
-        setCodepromos(codepromos) {
-            this.codepromos = codepromos
-        },
-        setCodepromo(codepromo) {
-            this.codepromo = codepromo
+        setCodepromos(items: any[]) {
+            this.codepromos = items
         },
         async fetchCodepromos() {
-            const response = await axios.get('/codepromos')
+            const api = useApi()
+            const response = await api.get('/codepromos')
             this.setCodepromos(response.data.data || response.data)
         },
-        async fetchCodepromo(id) {
-            const response = await axios.get('/codepromos/' + id)
-            this.setCodepromo(response.data.data || response.data)
+        async createCodepromo(data: any) {
+            const api = useApi()
+            const response = await api.post('/codepromos', data)
+            return response.data
         },
-        async createCodepromo(codepromo) {
-            const response = await axios.post('/codepromos', codepromo)
-            this.setCodepromo(response.data.data || response.data)
-        },
-        async deleteCodepromo(id) {
-            await axios.delete('/codepromos/' + id)
-            this.setCodepromo(null)
+        async deleteCodepromo(id: string | number) {
+            const api = useApi()
+            await api.delete(`/codepromos/${id}`)
         }
     }
 })

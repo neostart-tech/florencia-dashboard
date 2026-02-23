@@ -10,7 +10,9 @@ interface CodePromo {
 }
 
 const promoStore = useCodePromoStore()
-const { codepromos: promos } = storeToRefs(promoStore)
+const { codepromos } = storeToRefs(promoStore)
+// On s'assure que promos est toujours un tableau
+const promos = computed(() => (codepromos.value || []) as CodePromo[])
 const toast = useToast()
 
 // Initialisation
@@ -81,16 +83,20 @@ const handleDelete = async (id: string | number) => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
+  try {
+    return new Date(dateStr).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  } catch {
+    return dateStr
+  }
 }
 </script>
 
 <template>
-  <div class="p-6 lg:p-10 space-y-6 animate-page-in">
+  <div class="p-4 sm:p-6 lg:p-10 space-y-6 animate-page-in">
     <div class="flex items-center justify-between">
       <div>
         <p class="text-[0.7rem] uppercase tracking-[0.3em] text-cafe-500 font-sans mb-1">Offres Spéciales</p>
@@ -106,19 +112,20 @@ const formatDate = (dateStr: string) => {
     </div>
 
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.04)] bg-white rounded-3xl overflow-hidden">
+      <div class="overflow-x-auto">
       <UTable :rows="promos" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-4'
       }">
         <template #code-data="{ row }">
           <div class="flex items-center gap-2">
-            <span class="font-mono bg-cafe-50 text-cafe-700 px-3 py-1 rounded-md text-sm font-bold border border-cafe-100/50">{{ row.original.code }}</span>
+            <span class="font-mono bg-cafe-50 text-cafe-700 px-3 py-1 rounded-md text-sm font-bold border border-cafe-100/50">{{ (row.original as any).code }}</span>
           </div>
         </template>
 
         <template #pourcentage-data="{ row }">
           <UBadge color="success" variant="subtle" size="md" class="font-serif px-3">
-            -{{ row.original.pourcentage }}%
+            -{{ (row.original as any).pourcentage }}%
           </UBadge>
         </template>
 
@@ -126,7 +133,7 @@ const formatDate = (dateStr: string) => {
           <div class="flex flex-col">
             <span class="text-[0.7rem] text-neutral-500 uppercase tracking-widest">Période de validité</span>
             <div class="text-xs text-neutral-800 font-medium">
-              du {{ formatDate(row.original.date_debut) }} au {{ formatDate(row.original.date_fin) }}
+              du {{ formatDate((row.original as any).date_debut) }} au {{ formatDate((row.original as any).date_fin) }}
             </div>
           </div>
         </template>
@@ -138,7 +145,7 @@ const formatDate = (dateStr: string) => {
             icon="i-lucide-trash-2" 
             size="sm"
             class="hover:bg-error-50"
-            @click="handleDelete(row.original.id)"
+            @click="handleDelete((row.original as any).id)"
           />
         </template>
 
@@ -149,6 +156,7 @@ const formatDate = (dateStr: string) => {
           </div>
         </template>
       </UTable>
+      </div>
     </UCard>
 
     <UModal v-model="isModalOpen" prevent-close>
@@ -171,7 +179,7 @@ const formatDate = (dateStr: string) => {
             </div>
           </UFormField>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Date de lancement" required>
               <UInput v-model="newPromo.date_debut" type="date" size="md" variant="outline" icon="i-lucide-calendar" />
             </UFormField>

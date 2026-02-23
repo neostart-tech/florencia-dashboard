@@ -85,12 +85,12 @@ const items = (row: Personnel) => [
   [{
     label: 'Modifier le profil',
     icon: 'i-lucide-user-cog',
-    click: () => console.log('Edit', row.id)
+    onSelect: () => console.log('Edit', row.id)
   }], [{
     label: 'Retirer du personnel',
     icon: 'i-lucide-user-minus',
     color: 'error' as const,
-    click: () => handleDelete(row)
+    onSelect: () => handleDelete(row)
   }]
 ]
 </script>
@@ -119,10 +119,10 @@ const items = (row: Personnel) => [
       }">
         <template #personnel-data="{ row }">
           <div class="flex items-center gap-4">
-            <UAvatar :src="`https://ui-avatars.com/api/?name=${row.original.prenom}+${row.original.nom}&background=EFE9E6&color=56352E`" :alt="row.original.nom" size="md" class="ring-2 ring-cafe-50" />
+            <UAvatar :src="`https://ui-avatars.com/api/?name=${(row.original as any).prenom}+${(row.original as any).nom}&background=EFE9E6&color=56352E`" :alt="(row.original as any).nom" size="md" class="ring-2 ring-cafe-50" />
             <div class="flex flex-col">
-              <span class="font-medium text-neutral-800">{{ row.original.prenom }} {{ row.original.nom }}</span>
-              <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter">{{ row.original.poste || 'Collaborateur' }}</span>
+              <span class="font-medium text-neutral-800">{{ (row.original as any).prenom }} {{ (row.original as any).nom }}</span>
+              <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter">{{ (row.original as any).poste || 'Collaborateur' }}</span>
             </div>
           </div>
         </template>
@@ -141,9 +141,9 @@ const items = (row: Personnel) => [
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row.original as unknown as Personnel)">
+          <UDropdownMenu :items="items(row.original as unknown as Personnel)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
-          </UDropdown>
+          </UDropdownMenu>
         </template>
 
         <template #empty-state>

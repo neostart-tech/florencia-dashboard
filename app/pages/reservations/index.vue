@@ -83,32 +83,32 @@ const formatDate = (date: string) => {
         td: 'font-sans py-5'
       }">
         <template #code-data="{ row }">
-          <span class="font-mono text-xs font-bold text-cafe-700 tracking-wider">#{{ (row.original as Reservation).code }}</span>
+          <span class="font-mono text-xs font-bold text-cafe-700 tracking-wider">#{{ (row.original as any).code }}</span>
         </template>
 
         <template #service-data="{ row }">
-          <span class="text-xs font-medium text-neutral-800">{{ (row.original as Reservation).service?.nom }}</span>
+          <span class="text-xs font-medium text-neutral-800">{{ (row.original as any).service?.nom }}</span>
         </template>
 
         <template #client-data="{ row }">
-          <span class="text-xs text-neutral-600">{{ (row.original as Reservation).user?.prenom }} {{ (row.original as Reservation).user?.nom }}</span>
+          <span class="text-xs text-neutral-600">{{ (row.original as any).user?.prenom }} {{ (row.original as any).user?.nom }}</span>
         </template>
 
         <template #dateTime-data="{ row }">
           <div class="flex flex-col">
-            <span class="text-[0.65rem] font-sans uppercase tracking-widest text-neutral-400">{{ (row.original as Reservation).horaire?.jour?.libelle }}</span>
+            <span class="text-[0.65rem] font-sans uppercase tracking-widest text-neutral-400">{{ (row.original as any).horaire?.jour?.libelle }}</span>
             <div class="flex items-center gap-1.5 text-xs text-neutral-800 font-medium">
               <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 text-cafe-400" />
-              <span>{{ (row.original as Reservation).horaire?.heure_debut }}</span>
-              <span class="text-[0.6rem] text-neutral-400 ml-1">({{ formatDate((row.original as Reservation).created_at) }})</span>
+              <span>{{ (row.original as any).horaire?.heure_debut }}</span>
+              <span class="text-[0.6rem] text-neutral-400 ml-1">({{ formatDate((row.original as any).created_at) }})</span>
             </div>
           </div>
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="[[{ label: 'Annuler le RDV', icon: 'i-lucide-trash', color: 'error', click: () => handleDelete(row.original as Reservation) }]]">
+          <UDropdownMenu :items="[[{ label: 'Annuler le RDV', icon: 'i-lucide-trash', color: 'error', onSelect: () => handleDelete(row.original as any) }]]">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
-          </UDropdown>
+          </UDropdownMenu>
         </template>
 
         <template #empty-state>

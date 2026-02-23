@@ -87,12 +87,12 @@ const items = (row: Service) => [
   [{
     label: 'Modifier le service',
     icon: 'i-lucide-pencil',
-    click: () => console.log('Edit', row.id)
+    onSelect: () => console.log('Edit', row.id)
   }], [{
     label: 'Supprimer',
     icon: 'i-lucide-trash',
     color: 'error' as const,
-    click: () => handleDelete(row)
+    onSelect: () => handleDelete(row)
   }]
 ]
 </script>
@@ -149,9 +149,9 @@ const items = (row: Service) => [
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row.original as unknown as Service)">
+          <UDropdownMenu :items="items(row.original as unknown as Service)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
-          </UDropdown>
+          </UDropdownMenu>
         </template>
 
         <template #empty-state>

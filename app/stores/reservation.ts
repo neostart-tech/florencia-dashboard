@@ -1,21 +1,22 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const useReservationStore = defineStore('reservation', {
     state: () => ({
-        reservations: [],
+        reservations: [] as any[],
         reservation: null
     }),
     actions: {
-        setReservations(reservations) {
+        setReservations(reservations: any[]) {
             this.reservations = reservations
         },
         async fetchReservations() {
-            const response = await axios.get('/reservations')
+            const api = useApi()
+            const response = await api.get('/reservations')
             this.setReservations(response.data.data || response.data)
         },
         async deleteReservation(id: string | number) {
-            await axios.delete(`/reservations/${id}`)
+            const api = useApi()
+            await api.delete(`/reservations/${id}`)
         }
     }
 })

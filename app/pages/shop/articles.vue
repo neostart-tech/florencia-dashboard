@@ -106,18 +106,18 @@ const items = (row: Article) => [
   [{
     label: 'Éditer l\'article',
     icon: 'i-lucide-edit-3',
-    click: () => console.log('Edit', row.id)
+    onSelect: () => console.log('Edit', row.id)
   }], [{
     label: 'Archiver',
     icon: 'i-lucide-archive',
     color: 'error' as const,
-    click: () => handleDelete(row)
+    onSelect: () => handleDelete(row)
   }]
 ]
 </script>
 
 <template>
-  <div class="p-6 lg:p-10 space-y-8 animate-page-in">
+  <div class="p-4 sm:p-6 lg:p-10 space-y-8 animate-page-in">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
@@ -163,6 +163,7 @@ const items = (row: Article) => [
 
     <!-- Articles Table -->
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
+      <div class="overflow-x-auto">
       <UTable :rows="filteredArticles" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-4'
@@ -179,7 +180,7 @@ const items = (row: Article) => [
         <template #nom-data="{ row }">
           <div class="flex flex-col">
             <span class="font-medium text-neutral-800">{{ row.original.nom }}</span>
-            <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter mt-0.5">{{ row.original.sous_categorie?.libelle || 'Catalogue' }}</span>
+            <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter mt-0.5">{{ (row.original as any).sous_categorie?.libelle || 'Catalogue' }}</span>
           </div>
         </template>
 
@@ -188,9 +189,9 @@ const items = (row: Article) => [
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row.original as unknown as Article)">
+          <UDropdownMenu :items="items(row.original as unknown as Article)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" />
-          </UDropdown>
+          </UDropdownMenu>
         </template>
 
         <template #empty-state>
@@ -200,6 +201,7 @@ const items = (row: Article) => [
           </div>
         </template>
       </UTable>
+      </div>
     </UCard>
 
     <!-- Modal for new article -->

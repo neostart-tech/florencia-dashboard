@@ -1,37 +1,27 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const useCategorieStore = defineStore('categorie', {
     state: () => ({
-        categories: [],
+        categories: [] as any[],
         categorie: null
     }),
     actions: {
-        setCategories(categories) {
+        setCategories(categories: any[]) {
             this.categories = categories
         },
-        setCategorie(categorie) {
-            this.categorie = categorie
-        },
         async fetchCategories() {
-            const response = await axios.get('/categories')
+            const api = useApi()
+            const response = await api.get('/categories')
             this.setCategories(response.data.data || response.data)
         },
-        async fetchCategorie(id) {
-            const response = await axios.get('/categories/' + id)
-            this.setCategorie(response.data.data || response.data)
+        async createCategorie(data: any) {
+            const api = useApi()
+            const response = await api.post('/categories', data)
+            return response.data
         },
-        async createCategorie(categorie) {
-            const response = await axios.post('/categories', categorie)
-            this.setCategorie(response.data.data || response.data)
-        },
-        async updateCategorie(categorie) {
-            const response = await axios.put('/categories/' + categorie.id, categorie)
-            this.setCategorie(response.data.data || response.data)
-        },
-        async deleteCategorie(id) {
-            await axios.delete('/categories/' + id)
-            this.setCategorie(null)
+        async deleteCategorie(id: string | number) {
+            const api = useApi()
+            await api.delete(`/categories/${id}`)
         }
     }
 })

@@ -1,37 +1,27 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const usePersonnelStore = defineStore('personnel', {
     state: () => ({
-        personnels: [],
+        personnels: [] as any[],
         personnel: null
     }),
     actions: {
-        setPersonnels(personnels) {
+        setPersonnels(personnels: any[]) {
             this.personnels = personnels
         },
-        setPersonnel(personnel) {
-            this.personnel = personnel
-        },
         async fetchPersonnels() {
-            const response = await axios.get('/personnels')
+            const api = useApi()
+            const response = await api.get('/personnels')
             this.setPersonnels(response.data.data || response.data)
         },
-        async fetchPersonnel(id) {
-            const response = await axios.get('/personnels/' + id)
-            this.setPersonnel(response.data.data || response.data)
+        async createPersonnel(data: any) {
+            const api = useApi()
+            const response = await api.post('/personnels', data)
+            return response.data
         },
-        async createPersonnel(personnel) {
-            const response = await axios.post('/personnels', personnel)
-            this.setPersonnel(response.data.data || response.data)
-        },
-        async updatePersonnel(personnel) {
-            const response = await axios.put('/personnels/' + personnel.id, personnel)
-            this.setPersonnel(response.data.data || response.data)
-        },
-        async deletePersonnel(id) {
-            await axios.delete('/personnels/' + id)
-            this.setPersonnel(null)
+        async deletePersonnel(id: string | number) {
+            const api = useApi()
+            await api.delete(`/personnels/${id}`)
         }
     }
 })

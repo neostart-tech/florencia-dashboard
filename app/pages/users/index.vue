@@ -89,12 +89,12 @@ const items = (row: User) => [
   [{
     label: 'Modifier',
     icon: 'i-lucide-pencil',
-    click: () => console.log('Edit', row.id)
+    onSelect: () => console.log('Edit', row.id)
   }], [{
     label: 'Supprimer',
     icon: 'i-lucide-trash',
     color: 'error' as const,
-    click: async () => {
+    onSelect: async () => {
       if (!confirm(`Supprimer l'utilisateur ${row.nom} ?`)) return
       try {
         await userStore.deleteUser(row.id as string)
@@ -109,7 +109,7 @@ const items = (row: User) => [
 </script>
 
 <template>
-  <div class="p-6 lg:p-10 space-y-6 animate-fade-in">
+  <div class="p-4 sm:p-6 lg:p-10 space-y-6 animate-fade-in">
     <!-- Header Page -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
@@ -160,41 +160,42 @@ const items = (row: User) => [
 
     <!-- Table -->
     <UCard class="overflow-hidden border-none shadow-[0_20px_60px_rgba(108,66,57,0.06)] bg-white rounded-3xl">
+      <div class="overflow-x-auto">
       <UTable :rows="filteredUsers" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.65rem] tracking-[0.2em]',
         td: 'font-sans py-4'
       }">
         <template #user-data="{ row }">
           <div class="flex items-center gap-3">
-            <UAvatar :src="`https://ui-avatars.com/api/?name=${row.original.nom}&background=EFE9E6&color=56352E`" :alt="row.original.nom" size="md" class="border-2 border-cafe-50" />
+            <UAvatar :src="`https://ui-avatars.com/api/?name=${(row.original as any).nom}&background=EFE9E6&color=56352E`" :alt="(row.original as any).nom" size="md" class="border-2 border-cafe-50" />
             <div class="flex flex-col">
-              <span class="font-medium text-neutral-800">{{ row.original.nom }}</span>
-              <span class="text-xs text-neutral-400 lowercase">{{ row.original.email }}</span>
+              <span class="font-medium text-neutral-800">{{ (row.original as any).nom }}</span>
+              <span class="text-xs text-neutral-400 lowercase">{{ (row.original as any).email }}</span>
             </div>
           </div>
         </template>
 
         <template #role-data="{ row }">
           <UBadge 
-            v-if="row.original.role"
-            :color="roles[row.original.role.role as keyof typeof roles]?.color || 'neutral'" 
+            v-if="(row.original as any).role"
+            :color="roles[(row.original as any).role.role as keyof typeof roles]?.color || 'neutral'" 
             variant="subtle" 
             size="sm"
             class="uppercase tracking-widest text-[0.6rem]"
           >
-            {{ roles[row.original.role.role as keyof typeof roles]?.label || row.original.role.role }}
+            {{ roles[(row.original as any).role.role as keyof typeof roles]?.label || (row.original as any).role.role }}
           </UBadge>
           <span v-else class="text-xs text-neutral-300">—</span>
         </template>
 
         <template #tel-data="{ row }">
-          <span class="text-xs text-neutral-500">{{ row.original.tel || 'Non renseigné' }}</span>
+          <span class="text-xs text-neutral-500">{{ (row.original as any).tel || 'Non renseigné' }}</span>
         </template>
 
         <template #actions-data="{ row }">
-          <UDropdown :items="items(row.original as unknown as User)">
+          <UDropdownMenu :items="items(row.original as unknown as User)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" />
-          </UDropdown>
+          </UDropdownMenu>
         </template>
 
         <template #empty-state>
@@ -204,6 +205,7 @@ const items = (row: User) => [
           </div>
         </template>
       </UTable>
+      </div>
     </UCard>
 
     <!-- Modal Nouvel Utilisateur -->
@@ -219,9 +221,9 @@ const items = (row: User) => [
           </div>
         </template>
 
-        <form class="space-y-3" @submit.prevent="handleCreateUser">
+        <form class="space-y-4" @submit.prevent="handleCreateUser">
           <!-- Ligne 1 : Nom + Email -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Nom Complet" required>
               <UInput
                 id="input-nom"
@@ -249,7 +251,7 @@ const items = (row: User) => [
           </div>
 
           <!-- Ligne 2 : Téléphone + Mot de passe -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Téléphone (optionnel)">
               <UInput
                 id="input-tel"
@@ -277,7 +279,7 @@ const items = (row: User) => [
           </div>
 
           <!-- Ligne 3 : Rôle seul sur demi-largeur -->
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Rôle">
               <select
                 id="input-role"

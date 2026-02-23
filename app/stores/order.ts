@@ -1,22 +1,22 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 
 export const useOrderStore = defineStore('order', {
     state: () => ({
-        orders: [],
+        orders: [] as any[],
         order: null
     }),
     actions: {
-        setOrders(orders) {
+        setOrders(orders: any[]) {
             this.orders = orders
         },
         async fetchOrders() {
-            const response = await axios.get('/commandes')
+            const api = useApi()
+            const response = await api.get('/commandes')
             this.setOrders(response.data.data || response.data)
         },
         async updateOrderStatus(id: string | number, status: string) {
-            const response = await axios.put(`/commandes/${id}`, { statut: status })
-            return response.data
+            const api = useApi()
+            await api.put(`/commandes/${id}`, { statut: status })
         }
     }
 })
