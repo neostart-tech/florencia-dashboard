@@ -104,35 +104,35 @@ const formatDate = (date: string) => {
     <!-- Table -->
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
       <div class="overflow-x-auto">
-      <UTable :rows="fidelites" :columns="columns" :ui="{ 
+      <UTable :data="fidelites" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-5'
       }">
-        <template #code-data="{ row }">
+        <template #code-cell="{ row }">
           <div class="flex items-center gap-2">
              <span class="font-mono bg-neutral-900 text-white px-3 py-1 rounded text-xs tracking-widest">{{ (row.original as any).code }}</span>
           </div>
         </template>
 
-        <template #pourcentage-data="{ row }">
+        <template #pourcentage-cell="{ row }">
            <UBadge color="primary" variant="subtle" class="font-serif">-{{ (row.original as any).pourcentage }}%</UBadge>
         </template>
 
-        <template #client-data="{ row }">
+        <template #client-cell="{ row }">
            <span v-if="(row.original as any).user" class="text-xs text-neutral-700 font-medium">
              {{ (row.original as any).user.prenom }} {{ (row.original as any).user.nom }}
            </span>
            <span v-else class="text-[0.65rem] text-neutral-400 italic font-sans uppercase tracking-widest">Générique (Non attribué)</span>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
            <div class="flex items-center justify-end gap-2">
              <span class="text-[0.6rem] text-neutral-300 font-sans mr-2">Créé le {{ formatDate((row.original as any).created_at) }}</span>
              <UButton color="error" variant="ghost" icon="i-lucide-trash-2" size="xs" @click="handleDelete((row.original as any).id)" />
            </div>
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-award" class="w-10 h-10 text-neutral-100" />
             <p class="text-sm text-neutral-400 font-sans">Aucun programme de fidélité actif</p>
@@ -143,8 +143,8 @@ const formatDate = (date: string) => {
     </UCard>
 
     <!-- Modal Nouveau Code -->
-    <UModal v-model="isModalOpen">
-      <UCard :ui="{ body: 'p-8' }">
+    <UModal v-model:open="isModalOpen" :ui="{ footer: 'justify-end' }">
+      <template #body>
         <h3 class="font-serif text-xl mb-6 uppercase tracking-wide">Générer un Avantage</h3>
         <p class="text-xs text-neutral-500 mb-6 leading-relaxed">
           Le code généré pourra être utilisé par les clients pour bénéficier d'une remise exclusive sur l'ensemble de la boutique et du salon.
@@ -156,12 +156,12 @@ const formatDate = (date: string) => {
              <span class="font-serif text-lg text-cafe-700 w-12 text-right">{{ newFidelite.pourcentage }}%</span>
           </div>
         </UFormField>
+      </template>
 
-        <div class="flex justify-end gap-3 pt-8">
-          <UButton label="Annuler" variant="ghost" @click="isModalOpen = false" />
-          <UButton label="Générer le Code" class="bg-cafe-700 shadow-lg px-8" :loading="isSubmitting" @click="handleCreate" />
-        </div>
-      </UCard>
+      <template #footer>
+        <UButton label="Annuler" variant="ghost" @click="isModalOpen = false" />
+        <UButton label="Générer le Code" class="bg-cafe-700 shadow-lg px-8" :loading="isSubmitting" @click="handleCreate" />
+      </template>
     </UModal>
   </div>
 </template>

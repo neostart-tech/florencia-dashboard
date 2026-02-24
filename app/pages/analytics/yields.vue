@@ -78,17 +78,17 @@ const formatCurrency = (amount: number) => {
         <h3 class="font-serif text-xl text-neutral-800">Classement des rendements</h3>
       </template>
       <div class="overflow-x-auto">
-        <UTable :rows="yields" :columns="columns" :ui="{ td: 'font-sans py-4' }">
-          <template #personnel-data="{ row }">
+        <UTable :data="yields" :columns="columns" :ui="{ td: 'font-sans py-4' }">
+          <template #personnel-cell="{ row }">
             <span class="font-medium">{{ row.original.name }}</span>
           </template>
-          <template #stats-data="{ row }">
+          <template #stats-cell="{ row }">
             <div class="flex gap-4">
                <span class="text-xs text-neutral-500">{{ row.original.interventions }} actes</span>
                <span class="text-xs font-bold text-cafe-700">{{ formatCurrency(row.original.yield) }}</span>
             </div>
           </template>
-          <template #specialty-data="{ row }">
+          <template #specialty-cell="{ row }">
             <UBadge color="neutral" variant="subtle" size="sm">{{ row.original.top_service }}</UBadge>
           </template>
         </UTable>

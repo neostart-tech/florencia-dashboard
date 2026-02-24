@@ -7,8 +7,9 @@ export const useApi = () => {
     const instance = axios.create({
         baseURL: apiBase.endsWith('/') ? apiBase : `${apiBase}/`,
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Accept': 'application/json'
+            // Ne pas définir Content-Type ici : axios le gère automatiquement
+            // (multipart/form-data pour FormData, application/json sinon)
         }
     })
 

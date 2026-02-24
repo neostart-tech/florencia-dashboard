@@ -59,15 +59,15 @@ const formatDate = (date: string) => {
 
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
       <div class="overflow-x-auto">
-      <UTable :rows="interventions" :columns="columns" :ui="{ td: 'font-sans py-4' }">
-        <template #date-data="{ row }">
+      <UTable :data="interventions" :columns="columns" :ui="{ td: 'font-sans py-4' }">
+        <template #date-cell="{ row }">
           <div class="flex flex-col">
             <span class="text-xs font-medium text-neutral-800">{{ formatDate(row.original.date) }}</span>
             <span class="text-[0.65rem] text-neutral-400 capitalize">{{ useTimeAgo(row.original.date).value }}</span>
           </div>
         </template>
 
-        <template #personnel-data="{ row }">
+        <template #personnel-cell="{ row }">
           <div class="flex flex-col">
             <div class="flex items-center gap-1.5">
               <span class="text-xs font-semibold text-neutral-800">{{ row.original.employee }}</span>
@@ -77,15 +77,15 @@ const formatDate = (date: string) => {
           </div>
         </template>
 
-        <template #service-data="{ row }">
+        <template #service-cell="{ row }">
           <UBadge variant="subtle" color="neutral" class="font-sans text-[0.65rem]">{{ row.original.service }}</UBadge>
         </template>
 
-        <template #amount-data="{ row }">
+        <template #amount-cell="{ row }">
           <span class="font-serif text-sm">{{ formatCurrency(row.original.amount) }}</span>
         </template>
 
-        <template #status-data="{ row }">
+        <template #status-cell="{ row }">
           <UBadge 
             :color="row.original.status === 'terminé' ? 'success' : 'warning'" 
             variant="soft" 
@@ -96,7 +96,7 @@ const formatDate = (date: string) => {
           </UBadge>
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-clipboard-x" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucune intervention enregistrée</p>

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { storeToRefs } from 'pinia'
 
 interface Article {
@@ -6,16 +6,37 @@ interface Article {
   nom: string
   prix: number
   description?: string
-  images?: { url: string; path: string }[]
+  images?: { url?: string; path: string }[]
   sous_categorie?: { libelle: string }
 }
 
 const articleStore = useArticleStore()
 const sousCategorieStore = useSousCategorieStore()
+const runtimeConfig = useRuntimeConfig()
+
+// Base du serveur backend (sans /api)
+const storageBase = computed(() => {
+  const apiBase = runtimeConfig.public.apiBase as string
+  return apiBase.replace(/\/api\/?$/, '')
+})
 
 const { articles } = storeToRefs(articleStore)
 const { sousCategories } = storeToRefs(sousCategorieStore)
 const toast = useToast()
+
+/**
+ * Construit l'URL publique d'une image d'article.
+ * Utilise le champ 'url' de l'API si valide, sinon construit depuis 'path'.
+ */
+const getImageUrl = (article: any): string => {
+  const img = article?.images?.[0]
+  if (!img) return `https://ui-avatars.com/api/?name=${encodeURIComponent(article?.nom || 'A')}&background=FDFCFB&color=6C4239`
+  // Si l'API retourne une URL complète et valide
+  if (img.url && img.url.startsWith('http')) return img.url
+  // Sinon construire depuis le path brut (ex: "articles/xyz.jpg")
+  const path = img.url || img.path || ''
+  return `${storageBase.value}/storage/${path.replace(/^\//, '')}`
+}
 
 // Initialisation
 onMounted(() => {
@@ -52,6 +73,16 @@ const newArticle = ref({
   sous_categorie_id: ''
 })
 
+const selectedImages = ref<File[]>([])
+const imagePreviews = ref<string[]>([])
+
+const handleImageSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files) return
+  selectedImages.value = Array.from(input.files)
+  imagePreviews.value = selectedImages.value.map(f => URL.createObjectURL(f))
+}
+
 const filteredArticles = computed(() => {
   let list = articles.value || []
   if (selectedSubCat.value !== 'all') {
@@ -65,6 +96,8 @@ const filteredArticles = computed(() => {
 
 const resetForm = () => {
   newArticle.value = { nom: '', prix: 0, description: '', stock: 0, sous_categorie_id: '' }
+  selectedImages.value = []
+  imagePreviews.value = []
 }
 
 const handleCreateArticle = async () => {
@@ -75,7 +108,16 @@ const handleCreateArticle = async () => {
 
   isSubmitting.value = true
   try {
-    await articleStore.createArticle(newArticle.value)
+    // Envoi en multipart/form-data pour inclure les images
+    const formData = new FormData()
+    formData.append('nom', newArticle.value.nom)
+    formData.append('prix', String(newArticle.value.prix))
+    formData.append('description', newArticle.value.description || '')
+    formData.append('stock', String(newArticle.value.stock))
+    formData.append('sous_categorie_id', newArticle.value.sous_categorie_id)
+    selectedImages.value.forEach(file => formData.append('images[]', file))
+
+    await articleStore.createArticle(formData)
     toast.add({ title: 'Succès', description: 'Article ajouté au catalogue.', color: 'success' })
     isModalOpen.value = false
     resetForm()
@@ -164,37 +206,36 @@ const items = (row: Article) => [
     <!-- Articles Table -->
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
       <div class="overflow-x-auto">
-      <UTable :rows="filteredArticles" :columns="columns" :ui="{ 
+      <UTable :data="filteredArticles" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-4'
       }">
-        <template #image-data="{ row }">
+        <template #image-cell="{ row }">
           <img 
-            :src="(row.original as any).images?.[0]?.url 
-              ? (row.original as any).images[0].url 
-              : `https://ui-avatars.com/api/?name=${(row.original as any).nom}&background=FDFCFB&color=6C4239`" 
+            :src="getImageUrl(row.original)"
             class="w-12 h-12 rounded-xl object-cover border border-neutral-100 shadow-sm" 
+            @error="($event.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent((row.original as any).nom)}&background=FDFCFB&color=6C4239`"
           />
         </template>
 
-        <template #nom-data="{ row }">
+        <template #nom-cell="{ row }">
           <div class="flex flex-col">
-            <span class="font-medium text-neutral-800">{{ row.original.nom }}</span>
+            <span class="font-medium text-neutral-800">{{ (row.original as any).nom }}</span>
             <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter mt-0.5">{{ (row.original as any).sous_categorie?.libelle || 'Catalogue' }}</span>
           </div>
         </template>
 
-        <template #prix-data="{ row }">
-          <span class="font-serif text-cafe-700">{{ row.original.prix }} Fcfa</span>
+        <template #prix-cell="{ row }">
+          <span class="font-serif text-cafe-700">{{ (row.original as any).prix }} Fcfa</span>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <UDropdownMenu :items="items(row.original as unknown as Article)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" />
           </UDropdownMenu>
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-package" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucun article dans le catalogue</p>
@@ -205,18 +246,18 @@ const items = (row: Article) => [
     </UCard>
 
     <!-- Modal for new article -->
-    <UModal v-model="isModalOpen" size="lg" prevent-close>
-      <UCard :ui="{ body: 'p-8', header: 'border-b border-neutral-100 px-8 py-4', footer: 'border-t border-neutral-100 px-8 py-4' }">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-serif text-2xl tracking-wide uppercase text-neutral-800">Ajouter au catalogue</h3>
-              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Nouveau produit pour la boutique</p>
-            </div>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+    <UModal v-model:open="isModalOpen" size="lg" :dismissible="false" :ui="{ footer: 'justify-end' }">
+      <template #header>
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="font-serif text-2xl tracking-wide uppercase text-neutral-800">Ajouter au catalogue</h3>
+            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Nouveau produit pour la boutique</p>
           </div>
-        </template>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+        </div>
+      </template>
 
+      <template #body>
         <form class="space-y-6" @submit.prevent="handleCreateArticle">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-4">
@@ -232,21 +273,36 @@ const items = (row: Article) => [
                 </UFormField>
               </div>
               <UFormField label="Catégorie" required>
-                <select
-                  v-model="newArticle.sous_categorie_id"
-                  class="w-full h-9 rounded-md border border-neutral-200 px-3 text-sm font-sans text-neutral-700 bg-white focus:outline-none focus:ring-2 focus:ring-cafe-300 transition"
-                >
+                <select v-model="newArticle.sous_categorie_id" class="w-full h-9 rounded-md border border-neutral-200 px-3 text-sm font-sans text-neutral-700 bg-white focus:outline-none focus:ring-2 focus:ring-cafe-300 transition">
                   <option value="">Sélectionner une sous-catégorie</option>
                   <option v-for="sc in sousCategories" :key="sc.id" :value="sc.id.toString()">{{ sc.libelle }}</option>
                 </select>
               </UFormField>
             </div>
-            
-            <div class="flex flex-col items-center justify-center border-2 border-dashed border-neutral-100 rounded-3xl p-8 bg-neutral-50/50 group hover:border-cafe-200 transition-colors cursor-pointer relative overflow-hidden">
-              <UIcon name="i-lucide-image-plus" class="w-12 h-12 text-neutral-300 group-hover:text-cafe-300 transition-colors mb-4" />
-              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest">Téléverser l'image</p>
-              <p class="text-[0.5rem] text-neutral-300 mt-2">JPG, PNG (Max 2MB)</p>
-              <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" />
+            <div
+              class="flex flex-col items-center justify-center border-2 border-dashed border-neutral-100 rounded-3xl p-6 bg-neutral-50/50 group hover:border-cafe-200 transition-colors cursor-pointer relative overflow-hidden min-h-[160px]"
+              @click="($refs.fileInput as HTMLInputElement).click()"
+            >
+              <!-- Prévisualisations -->
+              <div v-if="imagePreviews.length > 0" class="grid grid-cols-2 gap-2 w-full">
+                <div v-for="(preview, i) in imagePreviews" :key="i" class="relative aspect-square rounded-2xl overflow-hidden">
+                  <img :src="preview" class="w-full h-full object-cover" />
+                  <button
+                    class="absolute top-1 right-1 bg-white/80 rounded-full p-0.5 hover:bg-white transition-colors"
+                    @click.stop="selectedImages.splice(i, 1); imagePreviews.splice(i, 1)"
+                  >
+                    <UIcon name="i-lucide-x" class="w-3 h-3 text-neutral-600" />
+                  </button>
+                </div>
+              </div>
+              <!-- Placeholder -->
+              <template v-else>
+                <UIcon name="i-lucide-image-plus" class="w-12 h-12 text-neutral-300 group-hover:text-cafe-300 transition-colors mb-3" />
+                <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest">Téléverser l'image</p>
+                <p class="text-[0.5rem] text-neutral-300 mt-1">JPG, PNG (Max 2MB)</p>
+              </template>
+              <!-- Input caché -->
+              <input ref="fileInput" type="file" accept="image/*" multiple class="hidden" @change="handleImageSelect" />
             </div>
           </div>
 
@@ -254,19 +310,12 @@ const items = (row: Article) => [
             <UTextarea v-model="newArticle.description" placeholder="Détails du produit, bienfaits, conseils d'utilisation..." variant="outline" :rows="3" />
           </UFormField>
         </form>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
-            <UButton
-              label="Ajouter l'article"
-              class="bg-cafe-700 hover:bg-cafe-800 px-8 py-3 font-sans uppercase tracking-[0.2em] text-xs shadow-lg"
-              :loading="isSubmitting"
-              @click="handleCreateArticle"
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
+        <UButton label="Ajouter l'article" class="bg-cafe-700 hover:bg-cafe-800 px-8 font-sans uppercase tracking-[0.2em] text-xs shadow-lg" :loading="isSubmitting" @click="handleCreateArticle" />
+      </template>
     </UModal>
   </div>
 </template>

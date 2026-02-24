@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { storeToRefs } from 'pinia'
 
 interface Category {
@@ -124,7 +124,7 @@ const deleteSub = async (id: string | number) => {
             <div class="space-y-2">
                <div v-for="sub in (cat.sous_categories || [])" :key="sub.id" class="flex items-center justify-between p-2 rounded-xl bg-neutral-50/50 hover:bg-cafe-50 group/sub transition-colors">
                   <span class="text-xs text-neutral-600 font-sans">{{ sub.libelle }}</span>
-                  <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="2xs" class="opacity-0 group-hover/sub:opacity-100 transition-all" @click="deleteSub(sub.id)" />
+                  <UButton color="neutral" variant="ghost" icon="i-lucide-x" size="xs" class="opacity-0 group-hover/sub:opacity-100 transition-all" @click="deleteSub(sub.id)" />
                </div>
                
                <div v-if="!(cat.sous_categories?.length)" class="text-center py-4 italic text-neutral-300 text-[0.65rem]">
@@ -144,22 +144,22 @@ const deleteSub = async (id: string | number) => {
     </div>
 
     <!-- Modal Catégorie -->
-    <UModal v-model="isCatModalOpen">
-      <UCard :ui="{ body: 'p-8' }">
+    <UModal v-model:open="isCatModalOpen" :ui="{ footer: 'justify-end' }">
+      <template #body>
         <h3 class="font-serif text-xl mb-6 uppercase tracking-wide">Rayon Principal</h3>
         <UFormField label="Nom de la catégorie" required>
           <UInput v-model="newCat.libelle" placeholder="Ex: Soins du corps, Parfumerie..." size="md" variant="outline" />
         </UFormField>
-        <div class="flex justify-end gap-3 pt-6">
-          <UButton label="Annuler" variant="ghost" @click="isCatModalOpen = false" />
-          <UButton label="Enregistrer" class="bg-cafe-700" :loading="isSubmitting" @click="handleCreateCat" />
-        </div>
-      </UCard>
+      </template>
+      <template #footer>
+        <UButton label="Annuler" variant="ghost" @click="isCatModalOpen = false" />
+        <UButton label="Enregistrer" class="bg-cafe-700" :loading="isSubmitting" @click="handleCreateCat" />
+      </template>
     </UModal>
 
     <!-- Modal Sous-Catégorie -->
-    <UModal v-model="isSubModalOpen">
-      <UCard :ui="{ body: 'p-8' }">
+    <UModal v-model:open="isSubModalOpen" :ui="{ footer: 'justify-end' }">
+      <template #body>
         <h3 class="font-serif text-xl mb-6 uppercase tracking-wide">Sous-Catégorie</h3>
         <div class="space-y-4">
           <UFormField label="Rayon Parent" required>
@@ -172,11 +172,11 @@ const deleteSub = async (id: string | number) => {
             <UInput v-model="newSub.libelle" placeholder="Ex: Savons artisanaux, Crèmes solaires..." size="md" variant="outline" />
           </UFormField>
         </div>
-        <div class="flex justify-end gap-3 pt-6">
-          <UButton label="Annuler" variant="ghost" @click="isSubModalOpen = false" />
-          <UButton label="Enregistrer" class="bg-cafe-700" :loading="isSubmitting" @click="handleCreateSub" />
-        </div>
-      </UCard>
+      </template>
+      <template #footer>
+        <UButton label="Annuler" variant="ghost" @click="isSubModalOpen = false" />
+        <UButton label="Enregistrer" class="bg-cafe-700" :loading="isSubmitting" @click="handleCreateSub" />
+      </template>
     </UModal>
   </div>
 </template>

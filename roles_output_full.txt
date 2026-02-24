@@ -1,0 +1,7 @@
+Roles found: 6
+- ID: 2502a830-badf-4b61-b5ba-159119f18067, Name: superadmin
+- ID: 731d3975-9037-4396-b7a8-a799c03722ee, Name: user
+- ID: 8b4ef07c-9c4a-4762-b9b8-892b9e0d26ba, Name: user
+- ID: a93c9e24-17fa-42f5-8a45-42687b1adf16, Name: superadmin
+- ID: b4614076-183a-4233-a533-370d416641c2, Name: admin
+- ID: f5d02c3b-1a28-4dce-9ba4-441e77f80e46, Name: admin

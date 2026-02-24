@@ -28,9 +28,13 @@ const { services } = storeToRefs(serviceStore)
 const { personnels } = storeToRefs(personnelStore)
 
 const toast = useToast()
-const isModalOpen = ref(false)
-const isHoraireModalOpen = ref(false)
 const selectedCalendarId = ref<string | number | null>(null)
+const viewMode = ref<'config' | 'agenda'>('config')
+const selectedDay = ref(new Date().getDay() || 7) // 1-7
+
+const agendaSlots = computed(() => {
+  return horaires.value.filter((h: any) => h.jour_numero === selectedDay.value || h.jour?.numero === selectedDay.value)
+})
 
 // Formulaires
 const newCalendar = ref({ debut: '', fin: '' })
@@ -96,24 +100,48 @@ const deleteHr = async (id: string | number) => {
   await horaireStore.deleteHoraire(id as string)
   horaireStore.fetchHoraires()
 }
+const isModalOpen = ref(false)
+const isHoraireModalOpen = ref(false)
 </script>
 
 <template>
   <div class="p-4 sm:p-6 lg:p-10 space-y-8 animate-page-in">
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <p class="text-[0.7rem] uppercase tracking-[0.3em] text-cafe-500 font-sans mb-1">Planning Maison</p>
-        <h1 class="text-3xl font-serif text-neutral-800 tracking-wide uppercase">Calendrier & Disponibilités</h1>
+        <h1 class="text-3xl font-serif text-neutral-800 tracking-wide uppercase">Calendrier & Agenda</h1>
       </div>
-      <UButton
-        icon="i-lucide-calendar-plus"
-        label="Nouvelle Période"
-        class="bg-cafe-700 hover:bg-cafe-800 text-white px-6 py-3 shadow-xl uppercase tracking-widest text-[0.65rem] font-sans"
-        @click="isModalOpen = true"
-      />
+      
+      <div class="flex items-center gap-2 bg-neutral-100 p-1 rounded-2xl">
+        <button 
+          @click="viewMode = 'config'"
+          class="px-6 py-2 text-[0.65rem] uppercase tracking-widest rounded-xl transition-all font-bold"
+          :class="viewMode === 'config' ? 'bg-white text-cafe-800 shadow-sm' : 'text-neutral-400'"
+        >
+          <UIcon name="i-lucide-settings-2" class="w-4 h-4 mr-1 inline" /> Config
+        </button>
+        <button 
+          @click="viewMode = 'agenda'"
+          class="px-6 py-2 text-[0.65rem] uppercase tracking-widest rounded-xl transition-all font-bold"
+          :class="viewMode === 'agenda' ? 'bg-white text-cafe-800 shadow-sm' : 'text-neutral-400'"
+        >
+          <UIcon name="i-lucide-calendar" class="w-4 h-4 mr-1 inline" /> Agenda
+        </button>
+      </div>
+
+      <div class="flex gap-3">
+        <UButton
+          v-if="viewMode === 'config'"
+          icon="i-lucide-calendar-plus"
+          label="Nouvelle Période"
+          class="bg-cafe-700 hover:bg-cafe-800 text-white px-6 py-3 shadow-xl uppercase tracking-widest text-[0.65rem] font-sans"
+          @click="isModalOpen = true"
+        />
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <!-- Vue Configuration -->
+    <div v-if="viewMode === 'config'" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <!-- Liste des périodes -->
       <div class="lg:col-span-4 space-y-4">
         <h2 class="text-xs font-sans uppercase tracking-[0.2em] text-neutral-400 px-2">Périodes de validité</h2>
@@ -160,22 +188,22 @@ const deleteHr = async (id: string | number) => {
           </template>
 
           <div class="overflow-x-auto">
-            <UTable :rows="horaires.filter((h: any) => h.calendrier_id === selectedCalendarId)" :columns="[
+            <UTable :data="horaires.filter((h: any) => h.calendrier_id === selectedCalendarId)" :columns="[
               { accessorKey: 'jour', header: 'Jour' },
               { accessorKey: 'temps', header: 'Heures' },
               { accessorKey: 'service', header: 'Prestation' },
               { accessorKey: 'actions', header: '', id: 'actions' }
             ]">
-              <template #jour-data="{ row }">
+              <template #jour-cell="{ row }">
                  <span class="font-sans font-medium uppercase text-[0.7rem] tracking-widest">{{ row.original.jour?.libelle }}</span>
               </template>
-              <template #temps-data="{ row }">
+              <template #temps-cell="{ row }">
                  <span class="text-xs text-neutral-600">{{ row.original.heure_debut }} - {{ row.original.heure_fin }}</span>
               </template>
-              <template #service-data="{ row }">
+              <template #service-cell="{ row }">
                  <span class="text-xs italic text-cafe-600">{{ row.original.service?.nom }}</span>
               </template>
-              <template #actions-data="{ row }">
+              <template #actions-cell="{ row }">
                 <UButton color="error" variant="ghost" icon="i-lucide-trash" size="xs" @click="deleteHr(row.original.id)" />
               </template>
             </UTable>
@@ -189,24 +217,85 @@ const deleteHr = async (id: string | number) => {
       </div>
     </div>
 
+    <!-- Vue Agenda -->
+    <div v-if="viewMode === 'agenda'" class="space-y-6">
+      <div class="flex items-center gap-2 p-4 bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-x-auto">
+        <button 
+          v-for="(day, i) in ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']" 
+          :key="i"
+          @click="selectedDay = i + 1"
+          class="flex-1 min-w-[60px] py-3 rounded-xl text-[0.65rem] uppercase tracking-widest font-bold transition-all"
+          :class="selectedDay === i + 1 ? 'bg-cafe-800 text-white shadow-lg' : 'text-neutral-500 hover:bg-neutral-50'"
+        >
+          {{ day }}
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="slot in agendaSlots" :key="slot.id" class="relative group">
+          <UCard class="border-none shadow-sm h-full" :ui="{ body: 'p-6' }">
+            <div class="flex justify-between items-start mb-4">
+              <div class="p-2.5 bg-neutral-50 rounded-xl">
+                <UIcon name="i-lucide-clock" class="w-5 h-5 text-cafe-500" />
+              </div>
+              <UBadge 
+                :color="slot.reservations?.length >= slot.nbre_clients ? 'error' : 'success'" 
+                variant="subtle" 
+                size="sm" 
+                class="uppercase text-[0.6rem] tracking-widest"
+              >
+                {{ slot.reservations?.length >= slot.nbre_clients ? 'Complet' : 'Disponible' }}
+              </UBadge>
+            </div>
+
+            <div class="space-y-1 mb-4">
+              <h4 class="text-lg font-serif text-neutral-800">{{ slot.heure_debut }} — {{ slot.heure_fin }}</h4>
+              <p class="text-[0.65rem] uppercase tracking-widest text-cafe-600 font-bold">{{ slot.service?.nom }}</p>
+            </div>
+
+            <div class="border-t border-neutral-50 pt-4 mt-auto">
+               <div v-if="slot.reservations?.length > 0" class="space-y-3">
+                  <p class="text-[0.6rem] uppercase tracking-widest text-neutral-400">Réservations ({{ slot.reservations.length }}/{{ slot.nbre_clients }})</p>
+                  <div v-for="res in slot.reservations" :key="res.id" class="flex items-center gap-3 p-2 bg-neutral-50 rounded-xl">
+                    <UAvatar :src="`https://ui-avatars.com/api/?name=${res.user?.nom}&background=random`" size="2xs" />
+                    <div class="flex flex-col truncate">
+                      <span class="text-xs font-medium text-neutral-800 truncate">{{ res.user?.nom }}</span>
+                      <span class="text-[0.6rem] text-neutral-400">ID: {{ res.code }}</span>
+                    </div>
+                  </div>
+               </div>
+               <div v-else class="py-2 flex items-center justify-center border border-dashed border-neutral-100 rounded-xl">
+                  <span class="text-[0.65rem] text-neutral-300 uppercase italic">Aucun RDV</span>
+               </div>
+            </div>
+          </UCard>
+        </div>
+
+        <div v-if="agendaSlots.length === 0" class="md:col-span-2 lg:col-span-3 h-64 flex flex-col items-center justify-center border-2 border-dashed border-neutral-100 rounded-3xl text-neutral-300">
+           <UIcon name="i-lucide-calendar-x" class="w-8 h-8 mb-2" />
+           <p class="text-sm font-sans uppercase tracking-widest">Aucun créneau configuré pour ce jour</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Période -->
-    <UModal v-model="isModalOpen">
-      <UCard :ui="{ body: 'p-8' }">
+    <UModal v-model:open="isModalOpen" :ui="{ footer: 'justify-end' }">
+      <template #body>
         <h3 class="font-serif text-xl mb-6 uppercase tracking-wide">Nouvelle Période</h3>
         <div class="space-y-4">
           <UFormField label="Date de début"><UInput v-model="newCalendar.debut" type="date" /></UFormField>
           <UFormField label="Date de fin"><UInput v-model="newCalendar.fin" type="date" /></UFormField>
-          <div class="flex justify-end gap-3 pt-4">
-            <UButton label="Annuler" variant="ghost" @click="isModalOpen = false" />
-            <UButton label="Créer" class="bg-cafe-700" @click="handleCreateCalendar" />
-          </div>
         </div>
-      </UCard>
+      </template>
+      <template #footer>
+        <UButton label="Annuler" variant="ghost" @click="isModalOpen = false" />
+        <UButton label="Créer" class="bg-cafe-700" @click="handleCreateCalendar" />
+      </template>
     </UModal>
 
     <!-- Modal Créneau -->
-    <UModal v-model="isHoraireModalOpen">
-      <UCard :ui="{ body: 'p-8' }">
+    <UModal v-model:open="isHoraireModalOpen" :ui="{ footer: 'justify-end' }">
+      <template #body>
         <h3 class="font-serif text-xl mb-6 uppercase tracking-wide">Ajouter un créneau</h3>
         <form class="space-y-4" @submit.prevent="handleCreateHoraire">
           <UFormField label="Jour de la semaine">
@@ -231,13 +320,13 @@ const deleteHr = async (id: string | number) => {
               <UCheckbox v-for="p in personnels" :key="p.id" :label="p.prenom" :value="p.id" v-model="newHoraire.personnels" />
             </div>
           </UFormField>
-
-          <div class="flex justify-end gap-3 pt-4">
-            <UButton label="Annuler" variant="ghost" @click="isHoraireModalOpen = false" />
-            <UButton label="Valider" class="bg-cafe-700" type="submit" />
-          </div>
         </form>
-      </UCard>
+      </template>
+
+      <template #footer>
+        <UButton label="Annuler" variant="ghost" @click="isHoraireModalOpen = false" />
+        <UButton label="Valider" class="bg-cafe-700" @click="handleCreateHoraire" />
+      </template>
     </UModal>
   </div>
 </template>

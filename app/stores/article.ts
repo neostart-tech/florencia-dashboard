@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 
 export const useArticleStore = defineStore('article', {
     state: () => ({
-        articles: [],
-        article: null
+        articles: [] as any[],
+        article: null as any
     }),
     actions: {
         setArticles(articles: any) {

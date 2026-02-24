@@ -23,12 +23,12 @@ const newUser = ref({
   nom: '',
   email: '',
   password: '',
-  role: 'client',
+  role: 'user',
   tel: ''
 })
 
 const resetForm = () => {
-  newUser.value = { nom: '', email: '', password: '', role: 'client', tel: '' }
+  newUser.value = { nom: '', email: '', password: '', role: 'user', tel: '' }
 }
 
 const handleCreateUser = async () => {
@@ -145,7 +145,7 @@ const items = (row: User) => [
             { label: 'Tous les rôles', value: 'all' },
             { label: 'Administrateurs', value: 'admin' },
             { label: 'Personnel', value: 'personnel' },
-            { label: 'Clients', value: 'client' }
+            { label: 'Clients', value: 'user' }
           ]"
           size="lg"
           color="neutral"
@@ -161,11 +161,11 @@ const items = (row: User) => [
     <!-- Table -->
     <UCard class="overflow-hidden border-none shadow-[0_20px_60px_rgba(108,66,57,0.06)] bg-white rounded-3xl">
       <div class="overflow-x-auto">
-      <UTable :rows="filteredUsers" :columns="columns" :ui="{ 
+      <UTable :data="filteredUsers" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.65rem] tracking-[0.2em]',
         td: 'font-sans py-4'
       }">
-        <template #user-data="{ row }">
+        <template #user-cell="{ row }">
           <div class="flex items-center gap-3">
             <UAvatar :src="`https://ui-avatars.com/api/?name=${(row.original as any).nom}&background=EFE9E6&color=56352E`" :alt="(row.original as any).nom" size="md" class="border-2 border-cafe-50" />
             <div class="flex flex-col">
@@ -175,7 +175,7 @@ const items = (row: User) => [
           </div>
         </template>
 
-        <template #role-data="{ row }">
+        <template #role-cell="{ row }">
           <UBadge 
             v-if="(row.original as any).role"
             :color="roles[(row.original as any).role.role as keyof typeof roles]?.color || 'neutral'" 
@@ -188,17 +188,17 @@ const items = (row: User) => [
           <span v-else class="text-xs text-neutral-300">—</span>
         </template>
 
-        <template #tel-data="{ row }">
+        <template #tel-cell="{ row }">
           <span class="text-xs text-neutral-500">{{ (row.original as any).tel || 'Non renseigné' }}</span>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <UDropdownMenu :items="items(row.original as unknown as User)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-vertical" />
           </UDropdownMenu>
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-users" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucun utilisateur trouvé</p>
@@ -209,110 +209,56 @@ const items = (row: User) => [
     </UCard>
 
     <!-- Modal Nouvel Utilisateur -->
-    <UModal v-model="isModalOpen" prevent-close>
-      <UCard :ui="{ body: 'p-6', header: 'border-b border-neutral-100 px-6 py-4', footer: 'border-t border-neutral-100 px-6 py-4' }">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-lg font-serif tracking-wide text-neutral-800">Nouvel Utilisateur</h3>
-              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Créer un compte sur la plateforme</p>
-            </div>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+    <UModal v-model:open="isModalOpen" :dismissible="false" :ui="{ footer: 'justify-end' }">
+      <template #header>
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="text-lg font-serif tracking-wide text-neutral-800">Nouvel Utilisateur</h3>
+            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Créer un compte sur la plateforme</p>
           </div>
-        </template>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+        </div>
+      </template>
 
+      <template #body>
         <form class="space-y-4" @submit.prevent="handleCreateUser">
           <!-- Ligne 1 : Nom + Email -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Nom Complet" required>
-              <UInput
-                id="input-nom"
-                v-model="newUser.nom"
-                placeholder="Ex: Marie Laurent"
-                size="md"
-                icon="i-lucide-user"
-                variant="outline"
-                class="w-full"
-              />
+              <UInput id="input-nom" v-model="newUser.nom" placeholder="Ex: Marie Laurent" size="md" icon="i-lucide-user" variant="outline" class="w-full" />
             </UFormField>
-
             <UFormField label="Adresse Email" required>
-              <UInput
-                id="input-email"
-                v-model="newUser.email"
-                type="email"
-                placeholder="marie@florencia.com"
-                size="md"
-                icon="i-lucide-mail"
-                variant="outline"
-                class="w-full"
-              />
+              <UInput id="input-email" v-model="newUser.email" type="email" placeholder="marie@florencia.com" size="md" icon="i-lucide-mail" variant="outline" class="w-full" />
             </UFormField>
           </div>
 
           <!-- Ligne 2 : Téléphone + Mot de passe -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Téléphone (optionnel)">
-              <UInput
-                id="input-tel"
-                v-model="newUser.tel"
-                placeholder="+228 90 00 00 00"
-                size="md"
-                icon="i-lucide-phone"
-                variant="outline"
-                class="w-full"
-              />
+              <UInput id="input-tel" v-model="newUser.tel" placeholder="+228 90 00 00 00" size="md" icon="i-lucide-phone" variant="outline" class="w-full" />
             </UFormField>
-
             <UFormField label="Mot de passe" required>
-              <UInput
-                id="input-password"
-                v-model="newUser.password"
-                type="password"
-                placeholder="••••••••"
-                size="md"
-                icon="i-lucide-lock"
-                variant="outline"
-                class="w-full"
-              />
+              <UInput id="input-password" v-model="newUser.password" type="password" placeholder="••••••••" size="md" icon="i-lucide-lock" variant="outline" class="w-full" />
             </UFormField>
           </div>
 
-          <!-- Ligne 3 : Rôle seul sur demi-largeur -->
+          <!-- Ligne 3 : Rôle -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <UFormField label="Rôle">
-              <select
-                id="input-role"
-                v-model="newUser.role"
-                class="w-full h-9 rounded-md border border-neutral-200 px-3 text-sm font-sans text-neutral-700 bg-white focus:outline-none focus:ring-2 focus:ring-cafe-300 focus:border-cafe-400 transition"
-              >
+              <select id="input-role" v-model="newUser.role" class="w-full h-9 rounded-md border border-neutral-200 px-3 text-sm font-sans text-neutral-700 bg-white focus:outline-none focus:ring-2 focus:ring-cafe-300 focus:border-cafe-400 transition">
                 <option value="admin">Administrateur</option>
                 <option value="personnel">Personnel</option>
-                <option value="client">Client</option>
+                <option value="user">Client</option>
               </select>
             </UFormField>
           </div>
         </form>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton
-              label="Annuler"
-              color="neutral"
-              variant="ghost"
-              class="font-sans uppercase tracking-widest text-xs"
-              @click="isModalOpen = false; resetForm()"
-            />
-            <UButton
-              id="btn-creer-compte"
-              label="Créer le compte"
-              class="bg-cafe-700 hover:bg-cafe-800 font-sans uppercase tracking-widest text-xs px-6"
-              :loading="isSubmitting"
-              @click="handleCreateUser"
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
+        <UButton id="btn-creer-compte" label="Créer le compte" class="bg-cafe-700 hover:bg-cafe-800 font-sans uppercase tracking-widest text-xs px-6" :loading="isSubmitting" @click="handleCreateUser" />
+      </template>
     </UModal>
   </div>
 </template>

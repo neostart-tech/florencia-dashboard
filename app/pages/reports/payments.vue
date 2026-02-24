@@ -60,25 +60,25 @@ const formatDate = (date: string) => {
     </div>
 
     <UCard class="border-none shadow-[0_20px_60px_rgba(239,68,68,0.03)] bg-white rounded-3xl overflow-hidden">
-      <UTable :rows="paymentAlerts" :columns="columns" :ui="{ td: 'font-sans py-5' }">
-        <template #date-data="{ row }">
+      <UTable :data="paymentAlerts" :columns="columns" :ui="{ td: 'font-sans py-5' }">
+        <template #date-cell="{ row }">
           <span class="text-xs text-neutral-500">{{ formatDate(row.original.date) }}</span>
         </template>
 
-        <template #details-data="{ row }">
+        <template #details-cell="{ row }">
           <div class="flex flex-col">
             <span class="text-xs font-bold text-neutral-800">{{ row.original.code }}</span>
             <span class="text-[0.7rem] text-neutral-400">{{ row.original.client }} • {{ row.original.type }}</span>
           </div>
         </template>
 
-        <template #amount-data="{ row }">
+        <template #amount-cell="{ row }">
           <span class="font-serif font-medium" :class="row.original.status === 'échoué' ? 'text-red-600' : 'text-amber-600'">
             {{ formatCurrency(row.original.amount) }}
           </span>
         </template>
 
-        <template #status-data="{ row }">
+        <template #status-cell="{ row }">
           <div class="flex flex-col">
             <UBadge 
               :color="row.original.status === 'échoué' ? 'error' : 'warning'" 
@@ -91,7 +91,7 @@ const formatDate = (date: string) => {
           </div>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <div class="flex gap-2">
             <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-check-circle" label="Valider" class="text-[0.6rem] uppercase tracking-widest" />
             <UButton size="xs" color="error" variant="ghost" icon="i-lucide-trash-2" class="text-[0.6rem]" />

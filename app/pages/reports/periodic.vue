@@ -1,22 +1,37 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
+
+const analyticStore = useAnalyticsStore()
+const { periodicReports } = storeToRefs(analyticStore)
 const selectedType = ref<'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual'>('monthly')
 
+const currentReport = computed(() => periodicReports.value[selectedType.value])
+
 const reportStats = computed(() => {
-  // Mock data for the report
+  if (!currentReport.value) return {
+    revenue: 0,
+    bookings: 0,
+    newCustomers: 0,
+    avgBasket: 0,
+    topServices: [],
+    expenses: 0,
+    margin: 0
+  }
+  
   return {
-    revenue: 2450000,
-    bookings: 124,
-    newCustomers: 18,
-    avgBasket: 19750,
-    topServices: [
-      { name: 'Soin Visage Signature', count: 42, revenue: 840000 },
-      { name: 'Massage Relaxant', count: 28, revenue: 560000 },
-      { name: 'Manucure Spa', count: 25, revenue: 250000 }
-    ],
-    expenses: 850000,
-    margin: 1600000
+    revenue: (currentReport.value as any).revenue || 0,
+    bookings: (currentReport.value as any).count || 0,
+    newCustomers: 0, // Pas encore implémenté côté backend
+    avgBasket: (currentReport.value as any).avg_basket || 0,
+    topServices: (currentReport.value as any).top_services || [],
+    expenses: 0,
+    margin: (currentReport.value as any).revenue || 0
   }
 })
+
+watch(selectedType, (newType) => {
+  analyticStore.fetchPeriodicReport(newType)
+}, { immediate: true })
 
 const types = [
   { label: 'Journalier', value: 'daily', icon: 'i-lucide-calendar' },
@@ -27,7 +42,7 @@ const types = [
 ]
 
 const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(amount).replace('XOF', 'Fcfa')
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(amount).replace('XOF', 'Fcfa')
 }
 </script>
 
@@ -84,12 +99,12 @@ const formatCurrency = (amount: number) => {
           </div>
         </template>
         
-        <UTable :rows="reportStats.topServices" :columns="[
+        <UTable :data="reportStats.topServices" :columns="[
           { accessorKey: 'name', header: 'Service' },
           { accessorKey: 'count', header: 'Volume' },
           { accessorKey: 'revenue', header: 'C.A Généré' }
         ]" :ui="{ td: 'font-sans py-4' }">
-           <template #revenue-data="{ row }">
+           <template #revenue-cell="{ row }">
              <span class="font-medium text-cafe-700">{{ formatCurrency(row.original.revenue) }}</span>
            </template>
         </UTable>

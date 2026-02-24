@@ -113,11 +113,11 @@ const items = (row: Personnel) => [
 
     <!-- Staff List -->
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
-      <UTable :rows="staff" :columns="columns" :ui="{ 
+      <UTable :data="staff" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-5'
       }">
-        <template #personnel-data="{ row }">
+        <template #personnel-cell="{ row }">
           <div class="flex items-center gap-4">
             <UAvatar :src="`https://ui-avatars.com/api/?name=${(row.original as any).prenom}+${(row.original as any).nom}&background=EFE9E6&color=56352E`" :alt="(row.original as any).nom" size="md" class="ring-2 ring-cafe-50" />
             <div class="flex flex-col">
@@ -127,26 +127,26 @@ const items = (row: Personnel) => [
           </div>
         </template>
 
-        <template #contact-data="{ row }">
+        <template #contact-cell="{ row }">
           <div class="flex flex-col gap-1">
             <div class="flex items-center gap-1.5 text-xs text-neutral-600">
               <UIcon name="i-lucide-mail" class="w-3 h-3 text-neutral-400" />
-              <span>{{ row.original.email }}</span>
+              <span>{{ (row.original as any).email }}</span>
             </div>
             <div class="flex items-center gap-1.5 text-xs text-neutral-600">
               <UIcon name="i-lucide-phone" class="w-3 h-3 text-neutral-400" />
-              <span>{{ row.original.tel }}</span>
+              <span>{{ (row.original as any).tel }}</span>
             </div>
           </div>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <UDropdownMenu :items="items(row.original as unknown as Personnel)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
           </UDropdownMenu>
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-users" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucun membre dans l'équipe</p>
@@ -156,18 +156,18 @@ const items = (row: Personnel) => [
     </UCard>
 
     <!-- Modal for new staff -->
-    <UModal v-model="isModalOpen" prevent-close>
-      <UCard :ui="{ body: 'p-6', header: 'border-b border-neutral-100 px-6 py-4', footer: 'border-t border-neutral-100 px-6 py-4' }">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-serif text-xl tracking-wide uppercase text-neutral-800">Recruter un talent</h3>
-              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Ajouter un nouveau membre à l'équipe</p>
-            </div>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+    <UModal v-model:open="isModalOpen" :dismissible="false" :ui="{ footer: 'justify-end' }">
+      <template #header>
+        <div class="flex items-start justify-between">
+          <div>
+            <h3 class="font-serif text-xl tracking-wide uppercase text-neutral-800">Recruter un talent</h3>
+            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Ajouter un nouveau membre à l'équipe</p>
           </div>
-        </template>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+        </div>
+      </template>
 
+      <template #body>
         <form class="space-y-4" @submit.prevent="handleCreatePersonnel">
           <div class="grid grid-cols-2 gap-4">
             <UFormField label="Prénom" required>
@@ -196,19 +196,17 @@ const items = (row: Personnel) => [
             </select>
           </UFormField>
         </form>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
-            <UButton
-              label="Valider l'embauche"
-              class="bg-cafe-700 hover:bg-cafe-800 font-sans uppercase tracking-widest text-xs px-6 shadow-lg"
-              :loading="isSubmitting"
-              @click="handleCreatePersonnel"
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
+        <UButton
+          label="Valider l'embauche"
+          class="bg-cafe-700 hover:bg-cafe-800 font-sans uppercase tracking-widest text-xs px-6 shadow-lg"
+          :loading="isSubmitting"
+          @click="handleCreatePersonnel"
+        />
+      </template>
     </UModal>
   </div>
 </template>

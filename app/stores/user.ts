@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 export const useUserStore = defineStore('user', {
     state: () => ({
         users: [] as any[],
+        clients: [] as any[],
         user: null as any,
         roles: [] as any[]
     }),
@@ -12,8 +13,13 @@ export const useUserStore = defineStore('user', {
         },
         async fetchUsers() {
             const api = useApi()
-            const response = await api.get('/admins') // Pour lister les utilsateurs (admin/personnel/users)
+            const response = await api.get('/admins')
             this.setUsers(response.data.data || response.data)
+        },
+        async fetchClients() {
+            const api = useApi()
+            const response = await api.get('/clients')
+            this.clients = response.data.data || response.data
         },
         async createUser(userData: any) {
             const api = useApi()

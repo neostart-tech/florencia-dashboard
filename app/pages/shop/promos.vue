@@ -113,23 +113,23 @@ const formatDate = (dateStr: string) => {
 
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.04)] bg-white rounded-3xl overflow-hidden">
       <div class="overflow-x-auto">
-      <UTable :rows="promos" :columns="columns" :ui="{ 
+      <UTable :data="promos" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-4'
       }">
-        <template #code-data="{ row }">
+        <template #code-cell="{ row }">
           <div class="flex items-center gap-2">
             <span class="font-mono bg-cafe-50 text-cafe-700 px-3 py-1 rounded-md text-sm font-bold border border-cafe-100/50">{{ (row.original as any).code }}</span>
           </div>
         </template>
 
-        <template #pourcentage-data="{ row }">
+        <template #pourcentage-cell="{ row }">
           <UBadge color="success" variant="subtle" size="md" class="font-serif px-3">
             -{{ (row.original as any).pourcentage }}%
           </UBadge>
         </template>
 
-        <template #validity-data="{ row }">
+        <template #validity-cell="{ row }">
           <div class="flex flex-col">
             <span class="text-[0.7rem] text-neutral-500 uppercase tracking-widest">Période de validité</span>
             <div class="text-xs text-neutral-800 font-medium">
@@ -138,7 +138,7 @@ const formatDate = (dateStr: string) => {
           </div>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <UButton 
             color="error" 
             variant="ghost" 
@@ -149,7 +149,7 @@ const formatDate = (dateStr: string) => {
           />
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-ticket" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucun code promo actif</p>
@@ -159,18 +159,18 @@ const formatDate = (dateStr: string) => {
       </div>
     </UCard>
 
-    <UModal v-model="isModalOpen" prevent-close>
-      <UCard :ui="{ body: 'p-8', header: 'border-b border-neutral-100 px-8 py-4', footer: 'border-t border-neutral-100 px-8 py-4' }">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-serif text-xl tracking-wide uppercase text-neutral-800">Générer une Offre</h3>
-              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Le code sera généré automatiquement</p>
-            </div>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+    <UModal v-model:open="isModalOpen" :dismissible="false" :ui="{ footer: 'justify-end' }">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-serif text-xl tracking-wide uppercase text-neutral-800">Générer une Offre</h3>
+            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-widest mt-0.5">Le code sera généré automatiquement</p>
           </div>
-        </template>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+        </div>
+      </template>
 
+      <template #body>
         <form class="space-y-6" @submit.prevent="handleCreatePromo">
           <UFormField label="Réduction brute (%)" required>
             <div class="flex items-center gap-4">
@@ -195,19 +195,17 @@ const formatDate = (dateStr: string) => {
             </p>
           </div>
         </form>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
-            <UButton 
-              label="Activer l'Offre" 
-              class="bg-cafe-700 hover:bg-cafe-800 text-white px-8 py-3 font-sans uppercase tracking-[0.2em] text-xs shadow-lg" 
-              :loading="isSubmitting"
-              @click="handleCreatePromo" 
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
+        <UButton 
+          label="Activer l'Offre" 
+          class="bg-cafe-700 hover:bg-cafe-800 text-white px-8 font-sans uppercase tracking-[0.2em] text-xs shadow-lg" 
+          :loading="isSubmitting"
+          @click="handleCreatePromo" 
+        />
+      </template>
     </UModal>
   </div>
 </template>

@@ -130,31 +130,31 @@ const items = (row: Service) => [
 
     <!-- Services Table -->
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
-      <UTable :rows="services" :columns="columns" :ui="{ 
+      <UTable :data="services" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-5'
       }">
-        <template #nom-data="{ row }">
+        <template #nom-cell="{ row }">
           <div class="flex flex-col max-w-xs">
             <span class="font-medium text-neutral-800 leading-tight">{{ row.original.nom }}</span>
             <span class="text-[0.65rem] text-cafe-500 uppercase tracking-tighter mt-1">{{ row.original.type }}</span>
           </div>
         </template>
 
-        <template #duree-data="{ row }">
+        <template #duree-cell="{ row }">
           <div class="flex items-center gap-1.5 text-neutral-500">
             <UIcon name="i-lucide-clock" class="w-3.5 h-3.5" />
             <span class="text-xs">{{ row.original.duree }} min</span>
           </div>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <UDropdownMenu :items="items(row.original as unknown as Service)">
             <UButton color="neutral" variant="ghost" icon="i-lucide-more-horizontal" />
           </UDropdownMenu>
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-scissors" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucune prestation trouvée</p>
@@ -164,18 +164,18 @@ const items = (row: Service) => [
     </UCard>
 
     <!-- Modal for new service -->
-    <UModal v-model="isModalOpen" size="lg" prevent-close>
-      <UCard :ui="{ body: 'p-8', header: 'border-b border-neutral-100 px-8 py-4', footer: 'border-t border-neutral-100 px-8 py-4' }">
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div class="space-y-1">
-              <h3 class="font-serif text-2xl tracking-wide uppercase">Créer une prestation</h3>
-              <p class="text-[0.65rem] text-neutral-400 uppercase tracking-[0.2em]">Ajoutez un nouveau rituel à votre carte</p>
-            </div>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+    <UModal v-model:open="isModalOpen" size="lg" :dismissible="false" :ui="{ footer: 'justify-end' }">
+      <template #header>
+        <div class="flex items-start justify-between">
+          <div class="space-y-1">
+            <h3 class="font-serif text-2xl tracking-wide uppercase">Créer une prestation</h3>
+            <p class="text-[0.65rem] text-neutral-400 uppercase tracking-[0.2em]">Ajoutez un nouveau rituel à votre carte</p>
           </div>
-        </template>
+          <UButton color="neutral" variant="ghost" icon="i-lucide-x" @click="isModalOpen = false; resetForm()" />
+        </div>
+      </template>
 
+      <template #body>
         <form class="space-y-4" @submit.prevent="handleCreateService">
           <UFormField label="Nom du service (Public)" required>
             <UInput v-model="newService.nom" placeholder="Ex: Rituel Cléopâtre" size="md" variant="outline" class="font-serif italic text-lg" />
@@ -202,19 +202,17 @@ const items = (row: Service) => [
             <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" multiple />
           </div>
         </form>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
-            <UButton
-              label="Publier le service"
-              class="bg-cafe-700 hover:bg-cafe-800 px-8 py-3 font-sans uppercase tracking-[0.2em] text-xs shadow-lg shadow-cafe-100"
-              :loading="isSubmitting"
-              @click="handleCreateService"
-            />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton label="Annuler" color="neutral" variant="ghost" class="font-sans uppercase tracking-widest text-xs" @click="isModalOpen = false; resetForm()" />
+        <UButton
+          label="Publier le service"
+          class="bg-cafe-700 hover:bg-cafe-800 px-8 py-3 font-sans uppercase tracking-[0.2em] text-xs shadow-lg shadow-cafe-100"
+          :loading="isSubmitting"
+          @click="handleCreateService"
+        />
+      </template>
     </UModal>
   </div>
 </template>

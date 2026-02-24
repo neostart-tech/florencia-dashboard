@@ -73,11 +73,11 @@ const formatCurrency = (amount: number) => {
 
     <UCard class="border-none shadow-[0_20px_60px_rgba(108,66,57,0.05)] bg-white rounded-3xl overflow-hidden">
       <div class="overflow-x-auto">
-      <UTable :rows="filteredCustomers" :columns="columns" :ui="{ 
+      <UTable :data="filteredCustomers" :columns="columns" :ui="{ 
         thead: 'bg-neutral-50/50 uppercase text-[0.6rem] tracking-[0.2em]',
         td: 'font-sans py-5'
       }">
-        <template #customer-data="{ row }">
+        <template #customer-cell="{ row }">
           <div class="flex items-center gap-3">
             <UAvatar :src="`https://ui-avatars.com/api/?name=${row.original.nom}&background=FDF8F6&color=6C4239`" size="md" />
             <div class="flex flex-col">
@@ -87,7 +87,7 @@ const formatCurrency = (amount: number) => {
           </div>
         </template>
 
-        <template #category-data="{ row }">
+        <template #category-cell="{ row }">
           <UBadge 
             :color="getCategory((row.original as any).category_id).color as any" 
             variant="subtle" 
@@ -97,25 +97,25 @@ const formatCurrency = (amount: number) => {
           </UBadge>
         </template>
 
-        <template #stats-data="{ row }">
+        <template #stats-cell="{ row }">
           <div class="flex flex-col">
             <span class="text-xs font-medium text-neutral-800">{{ row.original.visits }} passages</span>
             <span class="text-[0.65rem] text-cafe-600 font-serif italic">{{ formatCurrency(row.original.spent) }} cumulé</span>
           </div>
         </template>
 
-        <template #actions-data="{ row }">
+        <template #actions-cell="{ row }">
           <UButton 
             color="neutral" 
             variant="ghost" 
             icon="i-lucide-history" 
             label="Détails"
             class="text-[0.6rem] uppercase tracking-widest font-sans"
-            :to="`/crm/customer/${row.original.id}`"
+            :to="`/crm/${row.original.id}`"
           />
         </template>
 
-        <template #empty-state>
+        <template #empty>
           <div class="flex flex-col items-center justify-center py-16 gap-3">
             <UIcon name="i-lucide-users" class="w-10 h-10 text-neutral-200" />
             <p class="text-sm text-neutral-400 font-sans">Aucun client trouvé</p>

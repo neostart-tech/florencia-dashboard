@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { storeToRefs } from 'pinia'
 
 const crmStore = useCrmStore()
@@ -71,13 +71,13 @@ const addCategory = () => {
       </UCard>
     </div>
 
-    <UModal v-model="isOpen">
-      <UCard :ui="{ body: 'p-4 space-y-4' }">
-        <template #header>
-          <h3 class="font-serif text-lg text-neutral-800 uppercase tracking-widest">Nouvelle Catégorie</h3>
-        </template>
-        
-        <div class="p-4 space-y-4">
+    <UModal v-model:open="isOpen" :ui="{ footer: 'justify-end' }">
+      <template #header>
+        <h3 class="font-serif text-lg text-neutral-800 uppercase tracking-widest">Nouvelle Catégorie</h3>
+      </template>
+      
+      <template #body>
+        <div class="space-y-4">
           <UFormField label="Nom de la catégorie">
             <UInput v-model="newCategory.label" placeholder="ex: Client de passage" class="font-sans" />
           </UFormField>
@@ -86,14 +86,12 @@ const addCategory = () => {
             <USelect v-model="newCategory.color" :options="colorOptions" class="font-sans" />
           </UFormField>
         </div>
+      </template>
 
-        <template #footer>
-          <div class="flex justify-end gap-3">
-            <UButton color="neutral" variant="ghost" label="Annuler" @click="isOpen = false" />
-            <UButton color="primary" label="Enregistrer" class="bg-cafe-800 text-white" @click="addCategory" />
-          </div>
-        </template>
-      </UCard>
+      <template #footer>
+        <UButton color="neutral" variant="ghost" label="Annuler" @click="isOpen = false" />
+        <UButton color="primary" label="Enregistrer" class="bg-cafe-800 text-white" @click="addCategory" />
+      </template>
     </UModal>
   </div>
 </template>
