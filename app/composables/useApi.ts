@@ -8,12 +8,11 @@ export const useApi = () => {
         baseURL: apiBase.endsWith('/') ? apiBase : `${apiBase}/`,
         headers: {
             'Accept': 'application/json'
-            // Ne pas définir Content-Type ici : axios le gère automatiquement
-            // (multipart/form-data pour FormData, application/json sinon)
         }
     })
 
-    // Intercepteur pour normaliser les URLs (éviter les doubles slashes)
+    // Intercepteur critique : retire le slash au début de l'URL demandée
+    // pour éviter qu'Axios ne réinitialise le chemin à la racine du domaine.
     instance.interceptors.request.use((config) => {
         if (config.url && config.url.startsWith('/')) {
             config.url = config.url.substring(1)

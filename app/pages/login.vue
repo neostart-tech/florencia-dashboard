@@ -14,15 +14,19 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    const data = await authStore.login(email.value, password.value)
+    await authStore.login(email.value, password.value)
 
     toast.add({
       title: 'Connexion réussie',
-      description: `Bienvenue, ${data.user?.nom || data.user?.name || 'Administrateur'}`,
+      description: `Bienvenue, ${authStore.user?.nom || 'Membre du personnel'}`,
       color: 'success'
     })
 
-    navigateTo('/')
+    if (authStore.user?.role?.role === 'receptionnist') {
+      navigateTo('/receptionnist')
+    } else {
+      navigateTo('/')
+    }
   } catch (error: any) {
     console.error('Login error:', error)
     toast.add({
@@ -59,8 +63,8 @@ const handleLogin = async () => {
       >
         <template #header>
           <div class="text-center">
-            <h2 class="text-xl font-serif text-neutral-800 tracking-wide">Espace Administrateur</h2>
-            <p class="text-xs text-neutral-400 font-sans mt-1">Veuillez vous identifier pour continuer</p>
+            <h2 class="text-xl font-serif text-neutral-800 tracking-wide">Espace Personnel</h2>
+            <p class="text-xs text-neutral-400 font-sans mt-1">Veuillez vous identifier pour accéder à votre espace</p>
           </div>
         </template>
         

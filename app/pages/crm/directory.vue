@@ -2,8 +2,13 @@
 import { storeToRefs } from 'pinia'
 
 const crmStore = useCrmStore()
+const authStore = useAuthStore()
 const { customers, categories } = storeToRefs(crmStore)
 const toast = useToast()
+
+if (authStore.user?.role?.role === 'receptionnist') {
+  setPageLayout('reception')
+}
 
 const search = ref('')
 const selectedCategory = ref('all')

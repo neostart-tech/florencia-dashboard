@@ -24,14 +24,29 @@ export const useAuthStore = defineStore('auth', {
                 const token = localStorage.getItem('admin_token')
                 if (token) {
                     this.token = token
+                    // On ne peut pas await ici si c'est synchrone, 
+                    // mais on déclenche la récupération du profil
+                    this.fetchUser()
                 }
+            }
+        },
+        async fetchUser() {
+            try {
+                const api = useApi()
+                const response = await api.get('/profil')
+                // Laravel Resources wrap data in a 'data' property
+                this.user = response.data.data || response.data
+            } catch (error) {
+                this.setToken(null)
+                this.user = null
             }
         },
         async login(email: string, password: string) {
             const api = useApi()
             const response = await api.post('/admin/login', { email, password })
             this.setToken(response.data.token)
-            this.user = response.data.user
+            // L'utilisateur est retourné via UserResource, donc peut être wrappé
+            this.user = response.data.user?.data || response.data.user
             return response.data
         },
         async logout() {

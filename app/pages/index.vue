@@ -53,7 +53,6 @@ const topServices = computed(() => [
           <p class="text-[0.7rem] uppercase tracking-[0.4em] text-cafe-300 font-sans">Maison Florencia • Admin</p>
           <h1 class="text-4xl md:text-5xl font-serif tracking-wide leading-tight">Bonjour, <span class="italic text-cafe-200">Florencia</span></h1>
           <p class="text-neutral-400 font-sans max-w-md text-sm leading-relaxed">
-            Votre plateforme est désormais connectée au backend. Gérez votre activité en temps réel.
           </p>
         </div>
         <div class="flex items-center gap-4">

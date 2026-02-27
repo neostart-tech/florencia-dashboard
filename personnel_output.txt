@@ -1,1 +1,0 @@
-Error: SQLSTATE[01000]: Warning: 1265 Data truncated for column 'role' at row 1 (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: florencia, SQL: insert into `roles` (`id`, `role`, `updated_at`, `created_at`) values (14f30f35-91d7-463d-bf61-faceb1af6dca, personnel, 2026-02-23 18:04:33, 2026-02-23 18:04:33))

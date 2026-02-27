@@ -4,7 +4,12 @@ import { useCrmStore } from '~/stores/crm'
 
 const route = useRoute()
 const crmStore = useCrmStore()
+const authStore = useAuthStore()
 const { customers, categories, customerHistory } = storeToRefs(crmStore)
+
+if (authStore.user?.role?.role === 'receptionnist') {
+  setPageLayout('reception')
+}
 
 const customerId = route.params.id as string
 
